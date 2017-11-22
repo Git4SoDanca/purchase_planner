@@ -16,16 +16,15 @@ class reg(object):
 def roundup(x,y):
   return int(math.ceil(x/y))*y
 
-def create_order(conn, product_grade, lead_time):
+def create_order(conn, order_type, product_grade, lead_time, period_length):
+    print("Starting run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, datetime.datetime.now()))
     # database cursor definitions
     cur = conn.cursor()
     cur2 = conn.cursor()
-    # cur3 = conn.cursor()
 
     now = datetime.datetime.now()
     now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 26)).strftime('%Y-%m-%d')
     # print(now, now_minus_6mo)
-
 
     #global constants
     #These global vars to be pulled from constants table in the database
@@ -46,7 +45,7 @@ def create_order(conn, product_grade, lead_time):
         try:
             cur.execute(vendor_list_query)
             vendors = cur.fetchall()
-            cur.close()
+
         except Exception:
             print("I can't SELECT from res_partner. ERR:001")
             raise
@@ -58,16 +57,12 @@ def create_order(conn, product_grade, lead_time):
 
     # print(vendor_array[0])
 
-    print(now)
-
-
     for vendor in vendor_array:
 
         try:
             vendor_parent = vendor[1]
         except:
             vendor_parent = 0
-
 
         # print(subvendor[0])
         product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, 'vendor_cost from purchase list' AS vendor_cost, categ_id, product_product.name as product_name,
@@ -93,7 +88,7 @@ def create_order(conn, product_grade, lead_time):
             cur.execute(product_list_query)
             product_count = cur.rowcount
             product_list = cur.fetchall()
-            cur.close()
+
         except Exception:
             print("I can't execute query. ERR:002")
             pass
@@ -112,7 +107,7 @@ def create_order(conn, product_grade, lead_time):
             order_mod = product[9]
             lead_time = product[10]
 
-            purchase_period = 1 #in weeks
+            purchase_period = period_length #in weeks
 
             # print(product)
 
@@ -131,14 +126,14 @@ def create_order(conn, product_grade, lead_time):
                     cur.execute(qto_query) #cur3
                     product_qto = cur.fetchall()
                     # print(product_qto[0][0])
-                    cur.close()
+
                 except Exception:
                     print("I can't execute query. ERR:003")
                     raise Exception
                     pass
 
-                if 1: ### TEST
-                # if product_qto[0][0] > 0: ### Production
+                # if 1: ### TEST
+                if product_qto[0][0] > 0: ### Production
                 # print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
                     prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qhs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
@@ -149,7 +144,7 @@ def create_order(conn, product_grade, lead_time):
                         prod_details = cur.fetchall()
                         # Rounding qty to order
                         qto_rounded = roundup(prod_details[0][0],order_mod)
-                        cur.close()
+
                         # print(product_template_name, product_name, product_grade, qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
                         # print(prod_details)
                     except Exception:
@@ -163,68 +158,39 @@ def create_order(conn, product_grade, lead_time):
                     else:
                         product_vendor = vendor[0]
                         product_group = '0'
-                    #
-                    # print(prod_details)
-                    # print(product_vendor)
-                    # print(product_group)
-                    # print(now.strftime('%Y-%m-%d'))
-                    # print(start_date)
-                    # print(product_template_id)
-                    # print(product_id)
-                    # print(product_grade)
-                    # print(order_mod)
-                    # print(product_qto[0][0])
-                    # print(qto_rounded)
-                    # print('0', prod_details[0][0])
-                    # print('2', prod_details[0][2])
-                    # print('1', prod_details[0][1])
-                    # print('3', prod_details[0][3])
-                    # print('4', prod_details[0][4])
-                    # print(prod_details[0][5])
-                    #
-                    print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0], qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
 
+                    # print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
+                    # qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
 
                     insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, product_id, product_grade, order_mod, qty_2_ord,
-                    qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, box_capacity) VALUES (default, {0}, {1}, '{2}'::date, '{3}'::date, {4}, {5}, '{6}', {7}, {8},
-                    {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, 0)""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
+                    qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, box_capacity) VALUES (default, '{17}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, {5}, '{6}', {7}, {8},
+                    {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, 0)""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, prod_details[0][0],
+                        qto_rounded, prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type)
 
                     # print(insert_query)
 
                     try:
                         cur2.execute(insert_query)
-                        # print(conn.notices)
                         conn.commit()
-                        # print(conn.notices)
-                        cur2.close()
+
                     except Exception:
                         print("Cannot insert results. ERR:005")
-                        cur2.rollback()
-                        raise Exception
-                        pass
 
+    cur.close()
+    cur2.close()
+    print("Ending run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, datetime.datetime.now()))
 
-                    #qto_query = "SELECT sd_quantity_to_order({0})".format(product)
-
-            #try:
-                #cur3.execute(qto_query)
-                #qto = cur3.fetchall()
-                #print ("Quantity to order {0} - {1}").format(product, qto)
-            #except:
-
-
-            # print(product)
-
-
-
-
-
+### ------------------------------------ MAIN() ------------------------------------------ ###
 
 try:
     conn = psycopg2.connect("dbname='OE-BackupProd-USA-20171117' host='192.168.100.70' user='sodanca' password='iZ638GD'")
 
 except:
     print("I am unable to connect to the database")
+
+cur = conn.cursor()
+
+start_clock = datetime.datetime.now()
 
 # Clearing results table - Resetting for new data
 clear_table_query = """
@@ -274,17 +240,20 @@ try:
 except Exception:
     print(conn.notices)
     print("Cannot clear sodanca_purchase_plan. ERR:000")
-    raise Exception
+    pass
 
-create_order(conn, 'A', 5)
-create_order(conn, 'B', 5)
-create_order(conn, 'A', 5)
-create_order(conn, 'A', 5)
-create_order(conn, 'C', 5)
-create_order(conn, 'D', 5)
+cur.close()
+
+
+create_order(conn, 'R', 'A', 5, 1)
+create_order(conn, 'R', 'B', 5, 1)
+create_order(conn, 'N', 'A', 9, 1)
+create_order(conn, 'N', 'B', 9, 1)
+create_order(conn, 'R', 'C', 5, 12)
+create_order(conn, 'R', 'D', 5, 4)
 
 
 # cur3.close()
-print(datetime.datetime.now())
-print('Runtime: ',datetime.datetime.now()-now)
+print('Completion time: ',datetime.datetime.now())
+print('Runtime: ',datetime.datetime.now()- start_clock)
     # print(vendor_parent)
