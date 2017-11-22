@@ -16,7 +16,7 @@ class reg(object):
 def roundup(x,y):
   return int(math.ceil(x/y))*y
 
-def create_order(conn, order_type, product_grades, lead_time):
+def create_order(conn, product_grade, lead_time):
     # database cursor definitions
     cur = conn.cursor()
     cur2 = conn.cursor()
@@ -31,65 +31,14 @@ def create_order(conn, order_type, product_grades, lead_time):
     #These global vars to be pulled from constants table in the database
 
     vendor_id_list = [68,69] #Trinys, Soles
-    regular_ship_lead = 9 #in weeks
-    initial_regular_ship_date = now + datetime.timedelta(weeks = regular_ship_lead)
-    rush_ship_lead = 5 #in weeks
+    # regular_ship_lead = lead_time #in weeks
+    initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
+    # rush_ship_lead = 5 #in weeks
     forecast_window_limit = 26 #weeks
-    forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+regular_ship_lead)
+    forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+lead_time)
     # ^^^ Sets end date for planning window, may be reduced if process takes too long to run, adjust to be made by changing forecast_window_limit
 
     vendor_array = list()
-
-    # Clearing results table
-    clear_table_query = """
-        -- Table: public.sodanca_purchase_plan
-
-        DROP TABLE IF EXISTS public.sodanca_purchase_plan;
-
-        CREATE TABLE public.sodanca_purchase_plan
-        (
-            id SERIAL,
-            type character(1) COLLATE pg_catalog."default" NOT NULL,
-            vendor integer NOT NULL,
-            vendor_group integer,
-            creation_date date NOT NULL,
-            expected_date date NOT NULL,
-            template_id integer NOT NULL,
-            product_id integer NOT NULL,
-            product_grade character(1) COLLATE pg_catalog."default",
-            order_mod smallint,
-            qty_2_ord numeric NOT NULL,
-            qty_2_ord_adj numeric NOT NULL,
-            qty_on_order numeric,
-            qty_on_order_period numeric,
-            qty_committed numeric,
-            qty_sold numeric,
-            expected_on_hand numeric,
-            qty_on_hand numeric,
-            sales_trend numeric,
-            box_capacity integer,
-            CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
-        )
-        WITH (
-            OIDS = FALSE
-        )
-        TABLESPACE pg_default;
-
-        ALTER TABLE public.sodanca_purchase_plan
-            OWNER to sodanca;
-        COMMENT ON TABLE public.sodanca_purchase_plan
-            IS 'Reset nightly, used by stock purchase planner';
-
-    """
-    try:
-        cur.execute(clear_table_query)
-        conn.commit()
-        cur.close()
-    except Exception:
-        print(conn.notices)
-        print("Cannot clear sodanca_purchase_plan. ERR:000")
-        raise Exception
-
 
     for vendor_parent in vendor_id_list:
         vendor_list_query = "SELECT id FROM res_partner WHERE parent_id = {0} and supplier = true".format(vendor_parent)
@@ -135,8 +84,8 @@ def create_order(conn, order_type, product_grades, lead_time):
             AND product_product.discontinued_product = false
             AND product_product.procure_method = 'make_to_stock'
             AND product_supplierinfo.name = {0}
-            AND product_product.grade IN ('A','B')
-            """.format(vendor[0])
+            AND product_product.grade = '{1}'
+            """.format(vendor[0], product_grade)
         # print(vendor)
 
         try:
@@ -237,7 +186,7 @@ def create_order(conn, order_type, product_grades, lead_time):
 
 
                     insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, product_id, product_grade, order_mod, qty_2_ord,
-                    qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, box_capacity) VALUES (default, 'N', {0}, {1}, '{2}'::date, '{3}'::date, {4}, {5}, '{6}', {7}, {8},
+                    qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, box_capacity) VALUES (default, {0}, {1}, '{2}'::date, '{3}'::date, {4}, {5}, '{6}', {7}, {8},
                     {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, 0)""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
 
                     # print(insert_query)
@@ -276,6 +225,64 @@ try:
 
 except:
     print("I am unable to connect to the database")
+
+# Clearing results table - Resetting for new data
+clear_table_query = """
+    -- Table: public.sodanca_purchase_plan
+
+    DROP TABLE IF EXISTS public.sodanca_purchase_plan;
+
+    CREATE TABLE public.sodanca_purchase_plan
+    (
+        id SERIAL,
+        type character(1) COLLATE pg_catalog."default" NOT NULL,
+        vendor integer NOT NULL,
+        vendor_group integer,
+        creation_date date NOT NULL,
+        expected_date date NOT NULL,
+        template_id integer NOT NULL,
+        product_id integer NOT NULL,
+        product_grade character(1) COLLATE pg_catalog."default",
+        order_mod smallint,
+        qty_2_ord numeric NOT NULL,
+        qty_2_ord_adj numeric NOT NULL,
+        qty_on_order numeric,
+        qty_on_order_period numeric,
+        qty_committed numeric,
+        qty_sold numeric,
+        expected_on_hand numeric,
+        qty_on_hand numeric,
+        sales_trend numeric,
+        box_capacity integer,
+        CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
+    )
+    WITH (
+        OIDS = FALSE
+    )
+    TABLESPACE pg_default;
+
+    ALTER TABLE public.sodanca_purchase_plan
+        OWNER to sodanca;
+    COMMENT ON TABLE public.sodanca_purchase_plan
+        IS 'Reset nightly, used by stock purchase planner';
+
+"""
+try:
+    cur.execute(clear_table_query)
+    conn.commit()
+    cur.close()
+except Exception:
+    print(conn.notices)
+    print("Cannot clear sodanca_purchase_plan. ERR:000")
+    raise Exception
+
+create_order(conn, 'A', 5)
+create_order(conn, 'B', 5)
+create_order(conn, 'A', 5)
+create_order(conn, 'A', 5)
+create_order(conn, 'C', 5)
+create_order(conn, 'D', 5)
+
 
 # cur3.close()
 print(datetime.datetime.now())
