@@ -48,6 +48,8 @@ vendor_array = list()
 
 # Clearing results table
 clear_table_query = """
+    -- Table: public.sodanca_purchase_plan
+
     DROP TABLE IF EXISTS public.sodanca_purchase_plan;
 
     CREATE TABLE public.sodanca_purchase_plan
@@ -65,6 +67,7 @@ clear_table_query = """
         qty_2_ord numeric NOT NULL,
         qty_2_ord_adj numeric NOT NULL,
         qty_on_order numeric,
+        qty_on_order_period numeric,
         qty_committed numeric,
         qty_sold numeric,
         expected_on_hand numeric,
@@ -82,16 +85,17 @@ clear_table_query = """
         OWNER to sodanca;
     COMMENT ON TABLE public.sodanca_purchase_plan
         IS 'Reset nightly, used by stock purchase planner';
+
 """
 try:
     cur.execute(clear_table_query)
     print(conn.notices)
     conn.commit()
     print(conn.notices)
-except:
+except Exception:
     print(conn.notices)
     print("Cannot clear sodanca_purchase_plan. ERR:000")
-
+    raise Exception
 
 
 for vendor_parent in vendor_id_list:
@@ -149,12 +153,12 @@ for vendor in vendor_array:
 
     try:
         # print(product_list_query)
-        cur.execute(product_list_query) #cur2
-        # cur.commit()
+        cur.execute(product_list_query)
         product_count = cur.rowcount
         product_list = cur.fetchall()
-    except:
+    except Exception:
         print("I can't execute query. ERR:002")
+        pass
 
     for product in product_list:
         #Generating regular purchase orders
@@ -183,16 +187,20 @@ for vendor in vendor_array:
             qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 
             # print(vendor,product_template_name,product_name, product_grade,qto_query)
+            cur.execute(qto_query) #cur3
 
             try:
                 cur.execute(qto_query) #cur3
                 product_qto = cur.fetchall()
                 # print(product_qto[0][0])
-            except:
-                print("I can't execute query. ERR:003")strftime('%Y-%m-%d')
 
-            # if product_qto[0][0] > 0: ### Production
+            except Exception:
+                print("I can't execute query. ERR:003")
+                raise Exception
+                pass
+
             if 1: ### TEST
+            # if product_qto[0][0] > 0: ### Production
             # print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
                 prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qhs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
@@ -206,8 +214,10 @@ for vendor in vendor_array:
                     # print(product_template_name, product_name, product_grade, qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
 
                     # print(prod_details)
-                except:
+                except Exception:
                     print("I can't execute query. ERR:004")
+                    raise Exception
+                    pass
 
                 if vendor_parent != 0:
                     product_vendor = vendor_parent
@@ -234,7 +244,8 @@ for vendor in vendor_array:
                 # print('4', prod_details[0][4])
                 # print(prod_details[0][5])
                 #
-                # print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0], qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
+                print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0], qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
+
 
                 insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, product_id, product_grade, order_mod, qty_2_ord,
                 qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, box_capacity) VALUES (default, 'N', {0}, {1}, '{2}'::date, '{3}'::date, {4}, {5}, '{6}', {7}, {8},
@@ -247,9 +258,13 @@ for vendor in vendor_array:
                     # print(conn.notices)
                     conn.commit()
                     # print(conn.notices)
-                except:
+                except Exception:
                     print("Cannot insert results. ERR:005")
-        #qto_query = "SELECT sd_quantity_to_order({0})".format(product)
+                    raise Exception
+                    pass
+
+
+                #qto_query = "SELECT sd_quantity_to_order({0})".format(product)
 
         #try:
             #cur3.execute(qto_query)
