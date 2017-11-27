@@ -54,7 +54,7 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
             vendors = cur.fetchall()
 
         except Exception:
-            "I can't SELECT from res_partner. ERR:001")
+            fil.write("I can't SELECT from res_partner. ERR:001")
             raise
 
         for subvendor in vendors:
@@ -97,7 +97,7 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
             product_list = cur.fetchall()
 
         except Exception:
-            "I can't execute query. ERR:002")
+            fil.write("I can't execute query. ERR:002")
             pass
 
         for product in product_list:
