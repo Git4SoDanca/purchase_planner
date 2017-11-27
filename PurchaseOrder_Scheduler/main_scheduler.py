@@ -15,6 +15,11 @@ class reg(object):
 
 logfilename = 'purchase_planner.log'
 
+def log_entry(logfile, entry_text):
+    fil = open(logfile,'a')
+    fil.write(entry_text)
+    fil.close()
+
 
 
 def roundup(x,y):
@@ -42,7 +47,7 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
     # ^^^ Sets end date for planning window, may be reduced if process takes too long to run, adjust to be made by changing forecast_window_limit
 
     print("Starting run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-    fil.write("Starting run -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+    log_entry(logfilename,"Starting run -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 
     vendor_array = list()
 
@@ -54,8 +59,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
             vendors = cur.fetchall()
 
         except Exception:
-            fil.write("I can't SELECT from res_partner. ERR:001\n")
-            fil.write(Exception)
+            log_entry(logfilename,"I can't SELECT from res_partner. ERR:001\n")
+
             raise
 
         for subvendor in vendors:
@@ -98,8 +103,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
             product_list = cur.fetchall()
 
         except Exception:
-            fil.write("I can't execute query. ERR:002\n")
-            fil.write(Exception)
+            log_entry(logfilename,"I can't execute query. ERR:002\n")
+
             pass
 
         for product in product_list:
@@ -138,8 +143,7 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
                     # print(product_qto[0][0])
 
                 except Exception:
-                    fil.write("I can't execute query. ERR:003\n")
-                    fil.write(Exception)
+                    log_entry(logfilename,"I can't execute query. ERR:003\n")
                     raise Exception
                     pass
 
@@ -159,8 +163,7 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
                         # print(product_template_name, product_name, product_grade, qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
                         # print(prod_details)
                     except Exception:
-                        fil.write("I can't execute query. ERR:004\n")
-                        fil.write(Exception)
+                        log_entry(logfilename,"I can't execute query. ERR:004\n")
                         raise Exception
                         pass
 
@@ -186,14 +189,14 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
                         conn.commit()
 
                     except Exception:
-                        fil.write("Cannot insert results. ERR:005\n")
-                        fil.write(Exception)
+                        log_entry(logfilename,"Cannot insert results. ERR:005\n")
+
 
     cur.close()
     cur2.close()
 
     print("Ending run   -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-    fil.write("Ending run   -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+    log_entry(logfilename,"Ending run   -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
@@ -201,11 +204,11 @@ try:
     conn = psycopg2.connect("dbname='OE-BackupProd-USA-20171117' host='192.168.100.70' user='sodanca' password='iZ638GD'")
 
 except:
-    fil.write("I am unable to connect to the database\n")
+    log_entry(logfilename,"I am unable to connect to the database\n")
 
-fil = open(logfilename,'a')
+# fil = open(logfilename,'a')
 
-fil.write("\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 
 cur = conn.cursor()
 
@@ -261,7 +264,7 @@ try:
     cur.close()
 except Exception:
     print(conn.notices)
-    fil.write("Cannot clear sodanca_purchase_plan. ERR:000\n")
+    log_entry(logfilename,"Cannot clear sodanca_purchase_plan. ERR:000\n")
     pass
 
 cur.close()
@@ -278,20 +281,21 @@ try:
     create_order(conn, 'R', 'D', 5, 4)
 except KeyboardInterrupt:
     print("Interrupted by user")
-    fil.write("Interrupted by user. ERR:006\n")
+    log_entry(logfilename,"Interrupted by user. ERR:006\n")
+
 except Exception:
     print("Error on excution")
-    fil.write("Something unexpected happened. ERR:007\n")
-    fil.write(Exception)
+    log_entry(logfilename,"Something unexpected happened. ERR:007\n")
+
 
     pass
 
 
 # cur3.close()
 print('Completion time: ',datetime.datetime.now())
-fil.write('Completion time: ',datetime.datetime.now())
+log_entry(logfilename,'Completion time: ',datetime.datetime.now())
 print('Runtime: ',str(datetime.datetime.now()- start_clock))
-fil.write('Runtime: ',str(datetime.datetime.now()- start_clock))
-fil.write("="*80,"\n")
-fil.close()
+log_entry(logfilename,'Runtime: ',str(datetime.datetime.now()- start_clock))
+log_entry(logfilename,"="*80,"\n")
+# fil.close()
     # print(vendor_parent)
