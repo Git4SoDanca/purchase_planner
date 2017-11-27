@@ -17,7 +17,7 @@ def roundup(x,y):
   return int(math.ceil(x/y))*y
 
 def create_order(conn, order_type, product_grade, lead_time, period_length):
-    print("Starting run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, datetime.datetime.now()))
+
     # database cursor definitions
     cur = conn.cursor()
     cur2 = conn.cursor()
@@ -36,6 +36,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
     forecast_window_limit = 26 #weeks
     forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+lead_time)
     # ^^^ Sets end date for planning window, may be reduced if process takes too long to run, adjust to be made by changing forecast_window_limit
+
+    print("Starting run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 
     vendor_array = list()
 
@@ -123,6 +125,7 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
                 cur.execute(qto_query) #cur3
 
                 try:
+
                     cur.execute(qto_query) #cur3
                     product_qto = cur.fetchall()
                     # print(product_qto[0][0])
@@ -162,9 +165,9 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
                     # print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
                     # qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
 
-                    insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, product_id, product_grade, order_mod, qty_2_ord,
-                    qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, box_capacity) VALUES (default, '{17}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, {5}, '{6}', {7}, {8},
-                    {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, 0)""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, prod_details[0][0],
+                    insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id, product_grade, order_mod, qty_2_ord,
+                    qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, box_capacity) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
+                    '{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, 0)""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0],
                         qto_rounded, prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type)
 
                     # print(insert_query)
@@ -178,7 +181,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
 
     cur.close()
     cur2.close()
-    print("Ending run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, datetime.datetime.now()))
+
+    print("Ending run   -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
@@ -207,7 +211,10 @@ clear_table_query = """
         creation_date date NOT NULL,
         expected_date date NOT NULL,
         template_id integer NOT NULL,
+        template_name varchar(64),
         product_id integer NOT NULL,
+        product_name varchar(64),
+        product_category_id integer,
         product_grade character(1) COLLATE pg_catalog."default",
         order_mod smallint,
         qty_2_ord numeric NOT NULL,
@@ -244,7 +251,7 @@ except Exception:
 
 cur.close()
 
-
+# create_order(conn, order_type, product_grade, lead_time, period_length)
 create_order(conn, 'R', 'A', 5, 1)
 create_order(conn, 'R', 'B', 5, 1)
 create_order(conn, 'N', 'A', 9, 1)
@@ -255,5 +262,5 @@ create_order(conn, 'R', 'D', 5, 4)
 
 # cur3.close()
 print('Completion time: ',datetime.datetime.now())
-print('Runtime: ',datetime.datetime.now()- start_clock)
+print('Runtime: ',str(datetime.datetime.now()- start_clock))
     # print(vendor_parent)
