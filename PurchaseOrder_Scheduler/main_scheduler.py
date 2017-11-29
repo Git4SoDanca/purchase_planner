@@ -1,6 +1,6 @@
-#!/usr/bin/python3
+#!/home/fsoares/purchase_planner/PurchaseOrder_Scheduler/bin/python
 #
-# Small script to show PostgreSQL and Pyscopg together
+# Script to create purchase_planner table
 #
 
 import psycopg2
@@ -38,7 +38,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
     #global constants
     #These global vars to be pulled from constants table in the database
 
-    vendor_id_list = [68,69] #Trinys, Soles
+    vendor_id_list = [68,69] #Trinys, Soles USA
+    # vendor_id_list = [11305,11247] #Trinys, Soles Canada
     # regular_ship_lead = lead_time #in weeks
     initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
     # rush_ship_lead = 5 #in weeks
@@ -201,7 +202,9 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
 try:
-    conn = psycopg2.connect("dbname='OE-BackupProd-USA-20171117' host='192.168.100.70' user='sodanca' password='iZ638GD'")
+    # conn = psycopg2.connect("dbname='OE-BackupProd-USA-20171117' host='192.168.100.70' user='sodanca' password='iZ638GD'")
+    # conn = psycopg2.connect("dbname='OE-BackupProd-CAN-20171117' host='192.168.100.70' user='postgres' password='y586ML6FFnSbRStcjcae'")
+    conn = psycopg2.connect("dbname='OE-Prod-USA' host='192.168.100.60' user='sodanca' password='iZ638GD'")
 
 except:
     log_entry(logfilename,"I am unable to connect to the database\n")
@@ -269,8 +272,6 @@ except Exception:
 
 cur.close()
 
-
-
 # create_order(conn, order_type, product_grade, lead_time, period_length)
 try:
     create_order(conn, 'R', 'A', 5, 1)
@@ -284,7 +285,7 @@ except KeyboardInterrupt:
     log_entry(logfilename,"Interrupted by user. ERR:006\n")
 
 except Exception:
-    print("Error on excution")
+    print("Error on execution")
     log_entry(logfilename,"Something unexpected happened. ERR:007\n")
 
 
@@ -293,9 +294,9 @@ except Exception:
 
 # cur3.close()
 print('Completion time: ',datetime.datetime.now())
-log_entry(logfilename,'Completion time: ',datetime.datetime.now())
+log_entry(logfilename,'Completion time: '+(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 print('Runtime: ',str(datetime.datetime.now()- start_clock))
-log_entry(logfilename,'Runtime: ',str(datetime.datetime.now()- start_clock))
-log_entry(logfilename,"="*80,"\n")
+log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+log_entry(logfilename,"="*80+"\n")
 # fil.close()
     # print(vendor_parent)

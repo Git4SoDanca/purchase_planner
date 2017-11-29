@@ -1,0 +1,370 @@
+
+
+Process started - 17:46:50 - 2017-11-27
+Starting run -- order_type: R Grade: A - 17:46:50 - 2017-11-27
+Interrupted by user. ERR:006
+
+
+Process started - 17:47:09 - 2017-11-27
+Starting run -- order_type: R Grade: A - 17:47:09 - 2017-11-27
+Ending run   -- order_type: R Grade: A - 18:02:27 - 2017-11-27
+Starting run -- order_type: R Grade: B - 18:02:27 - 2017-11-27
+Ending run   -- order_type: R Grade: B - 18:13:30 - 2017-11-27
+Starting run -- order_type: N Grade: A - 18:13:30 - 2017-11-27
+Interrupted by user. ERR:006
+
+
+Process started - 18:30:01 - 2017-11-27
+Starting run -- order_type: R Grade: A - 18:30:01 - 2017-11-27
+Interrupted by user. ERR:006
+
+
+Process started - 10:30:18 - 2017-11-28
+Starting run -- order_type: R Grade: A - 10:30:18 - 2017-11-28
+Ending run   -- order_type: R Grade: A - 10:45:45 - 2017-11-28
+Starting run -- order_type: R Grade: B - 10:45:45 - 2017-11-28
+Ending run   -- order_type: R Grade: B - 10:56:57 - 2017-11-28
+Starting run -- order_type: N Grade: A - 10:56:57 - 2017-11-28
+Ending run   -- order_type: N Grade: A - 11:12:51 - 2017-11-28
+Starting run -- order_type: N Grade: B - 11:12:51 - 2017-11-28
+Ending run   -- order_type: N Grade: B - 11:24:18 - 2017-11-28
+Starting run -- order_type: R Grade: C - 11:24:18 - 2017-11-28
+Ending run   -- order_type: R Grade: C - 12:33:34 - 2017-11-28
+Starting run -- order_type: R Grade: D - 12:33:34 - 2017-11-28
+Interrupted by user. ERR:006
+
+
+Process started - 12:52:48 - 2017-11-28
+Starting run -- order_type: R Grade: A - 12:52:48 - 2017-11-28
+Something unexpected happened. ERR:007
+
+
+Process started - 12:53:47 - 2017-11-28
+Starting run -- order_type: R Grade: A - 12:53:47 - 2017-11-28
+Something unexpected happened. ERR:007
+
+
+Process started - 12:55:25 - 2017-11-28
+Starting run -- order_type: R Grade: A - 12:55:25 - 2017-11-28
+Something unexpected happened. ERR:007
+
+
+Process started - 12:57:06 - 2017-11-28
+Starting run -- order_type: R Grade: A - 12:57:06 - 2017-11-28
+Interrupted by user. ERR:006
+
+
+Process started - 13:52:44 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 13:53:18 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 13:55:03 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 13:56:10 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 13:56:35 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 13:57:43 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 13:57:43 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 13:58:54 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 13:58:54 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 13:59:52 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 13:59:52 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:01:11 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 14:01:30 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 14:03:24 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 14:09:06 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 14:09:57 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:09:57 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:11:20 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:11:20 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:13:05 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:13:05 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:20:14 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 14:22:12 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+
+
+Process started - 14:30:46 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:30:46 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:30:55 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:30:55 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:32:22 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:32:22 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:32:58 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:32:58 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:37:30 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:37:30 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+Starting run -- order_type: R Grade: B - 14:37:30 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+Starting run -- order_type: R Grade: C - 14:37:30 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+Starting run -- order_type: R Grade: D - 14:37:30 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 14:39:39 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:39:39 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+
+
+Process started - 14:40:04 - 2017-11-28
+Cannot clear sodanca_purchase_plan. ERR:000
+Starting run -- order_type: R Grade: A - 14:40:04 - 2017-11-28
+I can't SELECT from res_partner. ERR:001
+
+
+Process started - 14:44:43 - 2017-11-28
+Starting run -- order_type: R Grade: A - 14:44:43 - 2017-11-28
+Interrupted by user. ERR:006
+
+
+Process started - 14:45:15 - 2017-11-28
+Starting run -- order_type: R Grade: A - 14:45:15 - 2017-11-28
+Ending run   -- order_type: R Grade: A - 15:00:43 - 2017-11-28
+Starting run -- order_type: R Grade: B - 15:00:43 - 2017-11-28
+Ending run   -- order_type: R Grade: B - 15:11:50 - 2017-11-28
+
+
+Process started - 18:04:32 - 2017-11-28
+Starting run -- order_type: R Grade: A - 18:04:32 - 2017-11-28
+Interrupted by user. ERR:006
+
+
+Process started - 18:10:25 - 2017-11-28
+Starting run -- order_type: R Grade: A - 18:10:25 - 2017-11-28
+Ending run   -- order_type: R Grade: A - 18:10:25 - 2017-11-28
+Starting run -- order_type: R Grade: B - 18:10:25 - 2017-11-28
+Ending run   -- order_type: R Grade: B - 18:10:25 - 2017-11-28
+Starting run -- order_type: N Grade: A - 18:10:25 - 2017-11-28
+Ending run   -- order_type: N Grade: A - 18:10:25 - 2017-11-28
+Starting run -- order_type: N Grade: B - 18:10:25 - 2017-11-28
+Ending run   -- order_type: N Grade: B - 18:10:25 - 2017-11-28
+Starting run -- order_type: R Grade: C - 18:10:25 - 2017-11-28
+Ending run   -- order_type: R Grade: C - 18:10:25 - 2017-11-28
+Starting run -- order_type: R Grade: D - 18:10:25 - 2017-11-28
+Ending run   -- order_type: R Grade: D - 18:10:25 - 2017-11-28
+
+
+Process started - 18:11:11 - 2017-11-28
+Starting run -- order_type: R Grade: A - 18:11:11 - 2017-11-28
+Ending run   -- order_type: R Grade: A - 18:11:11 - 2017-11-28
+Starting run -- order_type: R Grade: B - 18:11:11 - 2017-11-28
+Ending run   -- order_type: R Grade: B - 18:11:11 - 2017-11-28
+Starting run -- order_type: N Grade: A - 18:11:11 - 2017-11-28
+Ending run   -- order_type: N Grade: A - 18:11:11 - 2017-11-28
+Starting run -- order_type: N Grade: B - 18:11:11 - 2017-11-28
+Ending run   -- order_type: N Grade: B - 18:11:11 - 2017-11-28
+Starting run -- order_type: R Grade: C - 18:11:11 - 2017-11-28
+Ending run   -- order_type: R Grade: C - 18:11:11 - 2017-11-28
+Starting run -- order_type: R Grade: D - 18:11:11 - 2017-11-28
+Ending run   -- order_type: R Grade: D - 18:11:11 - 2017-11-28
+
+
+Process started - 18:11:52 - 2017-11-28
+Starting run -- order_type: R Grade: A - 18:11:52 - 2017-11-28
+Ending run   -- order_type: R Grade: A - 18:11:52 - 2017-11-28
+Starting run -- order_type: R Grade: B - 18:11:52 - 2017-11-28
+Ending run   -- order_type: R Grade: B - 18:11:52 - 2017-11-28
+Starting run -- order_type: N Grade: A - 18:11:52 - 2017-11-28
+Ending run   -- order_type: N Grade: A - 18:11:52 - 2017-11-28
+Starting run -- order_type: N Grade: B - 18:11:52 - 2017-11-28
+Ending run   -- order_type: N Grade: B - 18:11:52 - 2017-11-28
+Starting run -- order_type: R Grade: C - 18:11:52 - 2017-11-28
+Ending run   -- order_type: R Grade: C - 18:11:52 - 2017-11-28
+Starting run -- order_type: R Grade: D - 18:11:52 - 2017-11-28
+Ending run   -- order_type: R Grade: D - 18:11:52 - 2017-11-28
+
+
+Process started - 18:12:09 - 2017-11-28
+Starting run -- order_type: R Grade: A - 18:12:09 - 2017-11-28
+Ending run   -- order_type: R Grade: A - 18:12:09 - 2017-11-28
+Starting run -- order_type: R Grade: B - 18:12:09 - 2017-11-28
+Ending run   -- order_type: R Grade: B - 18:12:09 - 2017-11-28
+Starting run -- order_type: N Grade: A - 18:12:09 - 2017-11-28
+Ending run   -- order_type: N Grade: A - 18:12:09 - 2017-11-28
+Starting run -- order_type: N Grade: B - 18:12:09 - 2017-11-28
+Ending run   -- order_type: N Grade: B - 18:12:09 - 2017-11-28
+Starting run -- order_type: R Grade: C - 18:12:09 - 2017-11-28
+Ending run   -- order_type: R Grade: C - 18:12:09 - 2017-11-28
+Starting run -- order_type: R Grade: D - 18:12:09 - 2017-11-28
+Ending run   -- order_type: R Grade: D - 18:12:09 - 2017-11-28
+
+
+Process started - 18:16:14 - 2017-11-28
+Starting run -- order_type: R Grade: A - 18:16:14 - 2017-11-28
+Interrupted by user. ERR:006
+
+
+Process started - 18:16:40 - 2017-11-28
+Starting run -- order_type: R Grade: A - 18:16:40 - 2017-11-28
+Ending run   -- order_type: R Grade: A - 18:20:25 - 2017-11-28
+Starting run -- order_type: R Grade: B - 18:20:25 - 2017-11-28
+Ending run   -- order_type: R Grade: B - 18:23:20 - 2017-11-28
+Starting run -- order_type: N Grade: A - 18:23:20 - 2017-11-28
+Ending run   -- order_type: N Grade: A - 18:27:03 - 2017-11-28
+Starting run -- order_type: N Grade: B - 18:27:03 - 2017-11-28
+Ending run   -- order_type: N Grade: B - 18:29:57 - 2017-11-28
+Starting run -- order_type: R Grade: C - 18:29:57 - 2017-11-28
+Ending run   -- order_type: R Grade: C - 18:34:45 - 2017-11-28
+Starting run -- order_type: R Grade: D - 18:34:45 - 2017-11-28
+Interrupted by user. ERR:006
+
+
+Process started - 10:46:03 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:46:03 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+
+
+Process started - 10:46:41 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:46:42 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+
+
+Process started - 10:49:24 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:49:24 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+
+
+Process started - 10:52:38 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:52:38 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+Completion time: 10:52:38 - 2017-11-29
+
+Process started - 10:53:03 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:53:03 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+Completion time: 10:53:03 - 2017-11-29Runtime: 0:00:00.100974================================================================================
+
+
+Process started - 10:55:17 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:55:17 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+Completion time: 10:55:17 - 2017-11-29Runtime: 0:00:00.112443================================================================================
+
+
+Process started - 10:56:12 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:56:13 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+Completion time: 10:56:13 - 2017-11-29Runtime: 0:00:00.086301================================================================================
+
+
+Process started - 10:56:29 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:56:29 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+Completion time: 10:56:29 - 2017-11-29Runtime: 0:00:00.107406================================================================================
+
+
+Process started - 10:57:45 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:57:45 - 2017-11-29
+I can't execute query. ERR:002
+Something unexpected happened. ERR:007
+Completion time: 10:57:45 - 2017-11-29Runtime: 0:00:00.101673================================================================================
+
+
+Process started - 10:59:47 - 2017-11-29
+Starting run -- order_type: R Grade: A - 10:59:47 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 10:59:52 - 2017-11-29Runtime: 0:00:05.082443================================================================================
+
+
+Process started - 11:07:19 - 2017-11-29
+Starting run -- order_type: R Grade: A - 11:07:19 - 2017-11-29
+Ending run   -- order_type: R Grade: A - 11:19:26 - 2017-11-29
+Completion time: 11:19:26 - 2017-11-29Runtime: 0:12:07.442924================================================================================
+
+
+Process started - 11:19:55 - 2017-11-29
+Starting run -- order_type: R Grade: B - 11:19:55 - 2017-11-29
+Ending run   -- order_type: R Grade: B - 11:28:44 - 2017-11-29
+Completion time: 11:28:44 - 2017-11-29Runtime: 0:08:49.419692================================================================================
