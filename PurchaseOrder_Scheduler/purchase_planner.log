@@ -388,3 +388,43 @@ Process started - 16:30:13 - 2017-11-29
 Starting run -- order_type: R Grade: A - 16:30:13 - 2017-11-29
 Interrupted by user. ERR:006
 Completion time: 16:30:16 - 2017-11-29Runtime: 0:00:02.859028================================================================================
+
+
+Process started - 16:40:58 - 2017-11-29
+Starting run -- order_type: R Grade: A - 16:40:58 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 16:41:00 - 2017-11-29Runtime: 0:00:02.517105================================================================================
+
+
+Process started - 16:41:10 - 2017-11-29
+Starting run -- order_type: R Grade: A - 16:41:11 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 16:41:12 - 2017-11-29Runtime: 0:00:01.096759================================================================================
+
+
+Process started - 16:42:21 - 2017-11-29
+Starting run -- order_type: R Grade: A - 16:42:21 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 16:42:24 - 2017-11-29Runtime: 0:00:02.760910================================================================================
+
+
+Process started - 16:43:39 - 2017-11-29
+Starting run -- order_type: R Grade: A - 16:43:39 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 16:43:42 - 2017-11-29Runtime: 0:00:02.840886================================================================================
+
+
+Process started - 16:50:51 - 2017-11-29
+Starting run -- order_type: R Grade: A - 16:50:51 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 16:50:52 - 2017-11-29Runtime: 0:00:01.344919================================================================================
+
+
+Process started - 16:50:56 - 2017-11-29
+Starting run -- order_type: R Grade: A - 16:50:56 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 16:50:59 - 2017-11-29Runtime: 0:00:03.193428================================================================================
+I am unable to connect to the database
+
+
+Process started - 17:00:54 - 2017-11-29

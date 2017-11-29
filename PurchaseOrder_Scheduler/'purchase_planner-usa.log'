@@ -1,0 +1,60 @@
+I am unable to connect to the database
+
+
+Process started - 17:02:57 - 2017-11-29
+
+
+Process started - 17:03:20 - 2017-11-29
+Something unexpected happened. ERR:007
+Completion time: 17:03:20 - 2017-11-29Runtime: 0:00:00.031678================================================================================
+
+
+Process started - 17:05:10 - 2017-11-29
+Something unexpected happened. ERR:007
+Completion time: 17:05:10 - 2017-11-29Runtime: 0:00:00.028807================================================================================
+
+
+Process started - 17:07:02 - 2017-11-29
+Something unexpected happened. ERR:007
+Completion time: 17:07:02 - 2017-11-29Runtime: 0:00:00.028536================================================================================
+
+
+Process started - 17:08:32 - 2017-11-29
+Something unexpected happened. ERR:007
+
+
+Process started - 17:10:18 - 2017-11-29
+Something unexpected happened. ERR:007
+
+
+Process started - 17:10:48 - 2017-11-29
+Starting run -- order_type: R Grade: A - 17:10:48 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 17:11:00 - 2017-11-29Runtime: 0:00:11.964868================================================================================
+
+
+Process started - 17:27:06 - 2017-11-29
+Something unexpected happened. ERR:007
+
+
+Process started - 17:29:29 - 2017-11-29
+Starting run -- order_type: R Grade: A - 17:29:30 - 2017-11-29
+I can't SELECT from res_partner. ERR:001
+Something unexpected happened. ERR:007
+
+
+Process started - 17:30:36 - 2017-11-29
+Starting run -- order_type: R Grade: A - 17:30:36 - 2017-11-29
+Something unexpected happened. ERR:007
+
+
+Process started - 17:30:53 - 2017-11-29
+Starting run -- order_type: R Grade: A - 17:30:53 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 17:31:25 - 2017-11-29Runtime: 0:00:32.240629================================================================================
+
+
+Process started - 17:36:03 - 2017-11-29
+Starting run -- order_type: R Grade: A - 17:36:03 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 17:36:05 - 2017-11-29

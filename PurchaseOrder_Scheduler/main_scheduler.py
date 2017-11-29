@@ -8,25 +8,24 @@ import datetime
 from dateutil import rrule
 import math
 import configparser
+import sys,getopt
 
 class reg(object):
     def __init__(self, cursor, registro):
         for (attr, val) in zip((d[0] for d in cursor.description),registro) :
             setattr(self, attr, val)
 
-logfilename = 'purchase_planner.log'
-
 def log_entry(logfile, entry_text):
     fil = open(logfile,'a')
     fil.write(entry_text)
     fil.close()
 
-
-
 def roundup(x,y):
   return int(math.ceil(x/y))*y
 
-def create_order(conn, order_type, product_grade, lead_time, period_length):
+def create_order(conn, order_type, product_grade, lead_time, period_length, companycode):
+
+    logfilename = config[companycode]['logfilename']
 
     # database cursor definitions
     cur = conn.cursor()
@@ -36,15 +35,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
     now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 26)).strftime('%Y-%m-%d')
     # print(now, now_minus_6mo)
 
-    #global constants
-    #These global vars to be pulled from constants table in the database
-
-    vendor_id_list = [68,69] #Trinys, Soles USA
-    # vendor_id_list = [11305,11247] #Trinys, Soles Canada
-    # regular_ship_lead = lead_time #in weeks
     initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
-    # rush_ship_lead = 5 #in weeks
-    forecast_window_limit = 26 #weeks
+    forecast_window_limit = int(config[companycode]['forecast_window_limit']) #weeks
     forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+lead_time)
     # ^^^ Sets end date for planning window, may be reduced if process takes too long to run, adjust to be made by changing forecast_window_limit
 
@@ -53,8 +45,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
 
     vendor_array = list()
 
-    for vendor_parent in vendor_id_list:
-        vendor_list_query = "SELECT id FROM res_partner WHERE parent_id = {0} and supplier = true".format(vendor_parent)
+    for vendor_parent in config[companycode]['vendor_id_list'].split(","):#vendor_id_list:
+        vendor_list_query = "SELECT id FROM res_partner WHERE parent_id = {0} and supplier = true".format(int(vendor_parent))
 
         try:
             cur.execute(vendor_list_query)
@@ -200,32 +192,14 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
     print("Ending run   -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
     log_entry(logfilename,"Ending run   -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 
-### ------------------------------------ MAIN() ------------------------------------------ ###
+def drop_results_table(conn):
 
-config = configparser.ConfigParser()
-config.sections()
-config.read('config.ini')
+    cur = conn.cursor()
 
-print(config['USA']['db_name'])
+    start_clock = datetime.datetime.now()
 
-try:
-    conn = psycopg2.connect("dbname='OE-BackupProd-USA-20171117' host='192.168.100.70' user='sodanca' password='iZ638GD'")
-    # conn = psycopg2.connect("dbname='OE-BackupProd-CAN-20171117' host='192.168.100.70' user='postgres' password='y586ML6FFnSbRStcjcae'")
-    # conn = psycopg2.connect("dbname='OE-Prod-USA' host='192.168.100.60' user='sodanca' password='iZ638GD'")
-
-except:
-    log_entry(logfilename,"I am unable to connect to the database\n")
-
-# fil = open(logfilename,'a')
-
-log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-
-cur = conn.cursor()
-
-start_clock = datetime.datetime.now()
-
-# Clearing results table - Resetting for new data
-clear_table_query = """
+    # Clearing results table - Resetting for new data
+    clear_table_query = """
     -- Table: public.sodanca_purchase_plan
 
     DROP TABLE IF EXISTS public.sodanca_purchase_plan;
@@ -267,43 +241,93 @@ clear_table_query = """
     COMMENT ON TABLE public.sodanca_purchase_plan
         IS 'Reset nightly, used by stock purchase planner';
 
-"""
-try:
-    cur.execute(clear_table_query)
-    conn.commit()
+    """
+    try:
+        cur.execute(clear_table_query)
+        conn.commit()
+        cur.close()
+    except Exception:
+        print(conn.notices)
+        log_entry(logfilename,"Cannot clear sodanca_purchase_plan. ERR:000\n")
+        pass
+
     cur.close()
-except Exception:
-    print(conn.notices)
-    log_entry(logfilename,"Cannot clear sodanca_purchase_plan. ERR:000\n")
-    pass
-
-cur.close()
-
-# create_order(conn, order_type, product_grade, lead_time, period_length)
-try:
-    create_order(conn, 'R', 'A', 5, 1)
-    create_order(conn, 'R', 'B', 5, 1)
-    create_order(conn, 'N', 'A', 9, 1)
-    create_order(conn, 'N', 'B', 9, 1)
-    create_order(conn, 'R', 'C', 5, 12)
-    create_order(conn, 'R', 'D', 5, 4)
-except KeyboardInterrupt:
-    print("Interrupted by user")
-    log_entry(logfilename,"Interrupted by user. ERR:006\n")
-
-except Exception:
-    print("Error on execution")
-    log_entry(logfilename,"Something unexpected happened. ERR:007\n")
 
 
-    pass
+### ------------------------------------ MAIN() ------------------------------------------ ###
+
+def main(companycode):
+    dbname = config[companycode]['db_name']
+    db_server_address = config[companycode]['db_server_address']
+    login = config[companycode]['login']
+    passwd = config[companycode]['passwd']
+
+    logfilename = config[companycode]['logfilename']#'purchase_planner.log'
+
+    try:
+        dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
+        print(dsn)
+        conn = psycopg2.connect(dsn)
+        # conn = psycopg2.connect("dbname='OE-BackupProd-CAN-20171117' host='192.168.100.70' user='postgres' password='y586ML6FFnSbRStcjcae'")
+        # conn = psycopg2.connect("dbname='OE-Prod-USA' host='192.168.100.60' user='sodanca' password='iZ638GD'")
+
+        log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+
+        drop_results_table(conn)
+
+    except:
+        print(logfilename,"I am unable to connect to the database\n")
+        log_entry(logfilename,"I am unable to connect to the database\n")
+
+    # create_order(conn, order_type, product_grade, lead_time, period_length)
+
+    lead_normal = int(config[companycode]['lead_normal'])
+    lead_rush = int(config[companycode]['lead_rush'])
+    plan_period_a = int(config[companycode]['plan_period_a'])
+    plan_period_b = int(config[companycode]['plan_period_b'])
+    plan_period_c = int(config[companycode]['plan_period_c'])
+    plan_period_d = int(config[companycode]['plan_period_d'])
+
+    try:
+        create_order(conn, 'R', 'A', lead_rush, plan_period_a, companycode)
+        create_order(conn, 'R', 'B', lead_rush, plan_period_b, companycode)
+        create_order(conn, 'N', 'A', lead_normal, plan_period_a, companycode)
+        create_order(conn, 'N', 'B', lead_normal, plan_period_b, companycode)
+        create_order(conn, 'R', 'C', lead_rush, plan_period_c, companycode)
+        create_order(conn, 'R', 'D', lead_rush, plan_period_d, companycode)
+
+    except KeyboardInterrupt:
+        print("Interrupted by user")
+        log_entry(logfilename,"Interrupted by user. ERR:006\n")
+
+    except Exception as e:
+        print("Error on execution. ERR:007")
+        log_entry(logfilename,"Something unexpected happened. ERR:007\n")
+        raise
+        pass
 
 
-# cur3.close()
-print('Completion time: ',datetime.datetime.now())
-log_entry(logfilename,'Completion time: '+(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-print('Runtime: ',str(datetime.datetime.now()- start_clock))
-log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
-log_entry(logfilename,"="*80+"\n")
+    # cur3.close()
+    print('Completion time: ',datetime.datetime.now())
+    log_entry(logfilename,'Completion time: '+(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+    print('Runtime: ',str(datetime.datetime.now()- start_clock))
+    log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+    log_entry(logfilename,"="*80+"\n")
 # fil.close()
     # print(vendor_parent)
+# ========================== EXECUTION CALL ========================================================== #
+
+config = configparser.ConfigParser()
+config.sections()
+config.read('config.ini')
+
+cmd_param = sys.argv[1]
+
+if cmd_param in config:
+    companycode = str(cmd_param)
+    main(companycode)
+elif cmd_param == '-i':
+    print("Start interactive")
+else:
+    print(cmd_param, 'is not a valid option. Use a company code or -i for interactive')
+    sys.exit(2)
