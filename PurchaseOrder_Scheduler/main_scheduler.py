@@ -7,6 +7,7 @@ import psycopg2
 import datetime
 from dateutil import rrule
 import math
+import configparser
 
 class reg(object):
     def __init__(self, cursor, registro):
@@ -200,6 +201,12 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
     log_entry(logfilename,"Ending run   -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 
 ### ------------------------------------ MAIN() ------------------------------------------ ###
+
+config = configparser.ConfigParser()
+config.sections()
+config.read('config.ini')
+
+print(config['USA']['db_name'])
 
 try:
     conn = psycopg2.connect("dbname='OE-BackupProd-USA-20171117' host='192.168.100.70' user='sodanca' password='iZ638GD'")

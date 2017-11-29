@@ -382,3 +382,9 @@ Ending run   -- order_type: N Grade: B - 16:12:02 - 2017-11-29
 Starting run -- order_type: R Grade: C - 16:12:02 - 2017-11-29
 Interrupted by user. ERR:006
 Completion time: 16:21:21 - 2017-11-29Runtime: 1:03:38.335014================================================================================
+
+
+Process started - 16:30:13 - 2017-11-29
+Starting run -- order_type: R Grade: A - 16:30:13 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 16:30:16 - 2017-11-29Runtime: 0:00:02.859028================================================================================
