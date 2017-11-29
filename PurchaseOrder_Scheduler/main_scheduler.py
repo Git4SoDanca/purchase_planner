@@ -202,9 +202,9 @@ def create_order(conn, order_type, product_grade, lead_time, period_length):
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
 try:
-    # conn = psycopg2.connect("dbname='OE-BackupProd-USA-20171117' host='192.168.100.70' user='sodanca' password='iZ638GD'")
+    conn = psycopg2.connect("dbname='OE-BackupProd-USA-20171117' host='192.168.100.70' user='sodanca' password='iZ638GD'")
     # conn = psycopg2.connect("dbname='OE-BackupProd-CAN-20171117' host='192.168.100.70' user='postgres' password='y586ML6FFnSbRStcjcae'")
-    conn = psycopg2.connect("dbname='OE-Prod-USA' host='192.168.100.60' user='sodanca' password='iZ638GD'")
+    # conn = psycopg2.connect("dbname='OE-Prod-USA' host='192.168.100.60' user='sodanca' password='iZ638GD'")
 
 except:
     log_entry(logfilename,"I am unable to connect to the database\n")

@@ -368,3 +368,17 @@ Process started - 11:19:55 - 2017-11-29
 Starting run -- order_type: R Grade: B - 11:19:55 - 2017-11-29
 Ending run   -- order_type: R Grade: B - 11:28:44 - 2017-11-29
 Completion time: 11:28:44 - 2017-11-29Runtime: 0:08:49.419692================================================================================
+
+
+Process started - 15:17:43 - 2017-11-29
+Starting run -- order_type: R Grade: A - 15:17:43 - 2017-11-29
+Ending run   -- order_type: R Grade: A - 15:33:21 - 2017-11-29
+Starting run -- order_type: R Grade: B - 15:33:21 - 2017-11-29
+Ending run   -- order_type: R Grade: B - 15:44:39 - 2017-11-29
+Starting run -- order_type: N Grade: A - 15:44:39 - 2017-11-29
+Ending run   -- order_type: N Grade: A - 16:00:30 - 2017-11-29
+Starting run -- order_type: N Grade: B - 16:00:30 - 2017-11-29
+Ending run   -- order_type: N Grade: B - 16:12:02 - 2017-11-29
+Starting run -- order_type: R Grade: C - 16:12:02 - 2017-11-29
+Interrupted by user. ERR:006
+Completion time: 16:21:21 - 2017-11-29Runtime: 1:03:38.335014================================================================================
