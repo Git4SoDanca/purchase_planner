@@ -8,7 +8,8 @@ import datetime
 from dateutil import rrule
 import math
 import configparser
-import sys,getopt
+import os,sys,getopt
+
 
 class reg(object):
     def __init__(self, cursor, registro):
@@ -456,7 +457,11 @@ def create_tables(conn, companycode):
       ALTER TABLE public.sodanca_purchase_plan
           OWNER to sodanca;
       COMMENT ON TABLE public.sodanca_purchase_plan
-          IS 'Reset nightly, used by stock purchase planner';""".format()
+          IS 'Reset nightly, used by stock purchase planner';""".format(grade_a_margin = config[companycode]['grade_a_margin'], grade_b_margin = config[companycode]['grade_b_margin'], grade_c_margin = config[companycode]['grade_c_margin'],
+          min_inv_time_a = config[companycode]['min_inv_time_a'], max_inv_time_a = config[companycode]['max_inv_time_a'],min_inv_time_b = config[companycode]['min_inv_time_b'], max_inv_time_b = config[companycode]['max_inv_time_b'],
+          min_inv_time_c = config[companycode]['min_inv_time_c'], max_inv_time_c = config[companycode]['max_inv_time_c'],min_inv_time_d = config[companycode]['min_inv_time_d'], max_inv_time_d = config[companycode]['max_inv_time_d'],
+          categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'],
+          categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'])
 
     logfilename = config[companycode]['logfilename']
     try:
@@ -470,34 +475,210 @@ def create_tables(conn, companycode):
         log_entry(logfilename,str(e))
         raise
 
-def create_views(conn, companycode):
-
 def create_functions(conn,companycode):
+    functions_query = """
+        -- Quantity Committed
+        CREATE OR REPLACE FUNCTION public.sd_qcomm(
+        	pid integer,
+            start_date date,
+        	end_date date)
+            RETURNS numeric
+            LANGUAGE 'sql'
+
+            COST 100
+            VOLATILE
+        AS $BODY$
+
+        SELECT sum(stock_move.product_qty) AS product_committed_total
+        FROM stock_move
+        WHERE
+        	stock_move.location_dest_id = {customers}
+            AND stock_move.location_id = {wh_stock}
+            AND (stock_move.state::text = ANY (ARRAY['confirmed'::character varying, 'assigned'::character varying]::text[]))
+            AND date_expected >= $2
+            AND date_expected < $3
+            AND stock_move.product_id = $1
+        GROUP BY stock_move.product_id
+
+        $BODY$;
+
+        ALTER FUNCTION public.sd_qcomm(integer, date, date)
+            OWNER TO sodanca;
+
+        -- Quantity on order
+        CREATE OR REPLACE FUNCTION public.sd_qoo(
+        	pid integer,
+        	start_date date,
+        	end_date date)
+            RETURNS decimal
+            LANGUAGE 'sql'
+
+            COST 100
+            VOLATILE
+        AS $BODY$
+
+        SELECT sum(stock_move.product_qty) AS on_order_total
+        FROM stock_move
+        WHERE
+        	stock_move.location_dest_id = {wh_stock}
+            AND stock_move.location_id = {supplier}
+            AND (stock_move.state::text = ANY (ARRAY['confirmed'::character varying, 'assigned'::character varying]::text[]))
+            AND date_expected >= $2 --now()::date
+            AND date_expected <= $3 --now()::date
+            AND stock_move.product_id = $1
+        GROUP BY stock_move.product_id
+
+        $BODY$;
+
+        ALTER FUNCTION public.sd_qoo(integer, date, date)
+            OWNER TO sodanca;
+
+        -- Quantity Sold
+        CREATE OR REPLACE FUNCTION public.sd_qs(
+        	pid integer,
+        	start_date date,
+        	end_date date)
+            RETURNS numeric
+            LANGUAGE 'sql'
+
+            COST 100
+            VOLATILE
+        AS $BODY$
+
+        SELECT
+        	CASE
+            	WHEN sum(stock_move.product_qty) != 0 THEN sum(stock_move.product_qty) ELSE 0 END AS on_order_total
+        FROM stock_move
+        WHERE
+        	stock_move.location_dest_id = {customers}
+            AND stock_move.location_id = {wh_stock}
+            AND (stock_move.state::text = 'done'::character varying)
+            AND date_expected >= $2 --start_date
+            AND date_expected < $3 --end_date
+            AND stock_move.product_id = $1
+        GROUP BY stock_move.product_id
+
+        $BODY$;
+
+        ALTER FUNCTION public.sd_qs(integer, date, date)
+            OWNER TO sodanca;
+
+        -- Quantity on hand
+        CREATE OR REPLACE FUNCTION sd_qoh(pid int) RETURNS decimal AS
+        $$
+          SELECT
+            sum(
+                CASE
+                    WHEN (stock_move.location_dest_id IN ( SELECT stock_location.id
+                       FROM stock_location
+                      WHERE stock_location.usage::text = 'internal'::text)) AND stock_move.state::text = 'done'::text THEN stock_move.product_qty
+                    ELSE 0.0
+                END) - sum(
+                CASE
+                    WHEN (stock_move.location_id IN ( SELECT stock_location.id
+                       FROM stock_location
+                      WHERE stock_location.usage::text = 'internal'::text)) AND stock_move.state::text = 'done'::text THEN stock_move.product_qty
+                    ELSE 0.0
+                END) AS quantity_on_hand
+           FROM stock_move
+           WHERE stock_move.product_id = $1
+          GROUP BY stock_move.product_id
+        $$ LANGUAGE SQL;
 
 
-### ------------------------------------ MAIN() ------------------------------------------ ###
+        -- Quantity on hand expected
+        CREATE OR REPLACE FUNCTION public.sd_expected_onhand( pid integer, start_date date) RETURNS numeric
+        LANGUAGE 'sql'
+        COST 100
+        VOLATILE AS $BODY$
+        SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'6 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs($1,now()::date,$2),sd_qcomm($1,(now()-'6 months'::interval)::date,$2)),0));
 
-def main(companycode):
-    dbname = config[companycode]['db_name']
-    db_server_address = config[companycode]['db_server_address']
-    login = config[companycode]['login']
-    passwd = config[companycode]['passwd']
 
-    logfilename = config[companycode]['logfilename']#'purchase_planner.log'
+        $BODY$;
 
+
+        ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO sodanca;
+
+        -- Sales trend
+        CREATE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
+        $$
+        SELECT round(sd_qs($1,(now()-'6 months'::interval)::date, now()::date)/sd_qs($1,(now()- '18 months'::interval)::date,(now()- '12 months'::interval)::date)*100,2) as growth;
+        $$ LANGUAGE SQL;
+
+        -- Quantity to order - Purchase planner
+        CREATE OR REPLACE FUNCTION public.sd_quantity_to_order(
+        	pid integer,
+        	start_date date,
+        	end_date date)
+            RETURNS numeric
+            LANGUAGE 'sql'
+
+            COST 100
+            VOLATILE
+
+        AS $BODY$
+
+        SELECT GREATEST(sd_qs($1,$2,$3),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+
+        $BODY$;
+
+        ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
+            OWNER TO sodanca;
+    """.format(wh_stock = 12, customers = 9, supplier = 8)
+
+    logfilename = config[companycode]['logfilename']
     try:
-        dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
-        print(dsn)
-        conn = psycopg2.connect(dsn)
-        log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-        drop_results_table(conn)
+        cur = conn.cursor()
+        cur.execute(functions_query)
+        cur.commit()
+        cur.close()
+        log_entry(logfilename,"Functions created successfully.")
+    except Exception as e:
+        log_entry(logfilename, 'Error creating functions. ERR:009')
+        log_entry(logfilename,str(e))
+        raise
 
-    except:
-        print(logfilename,"I am unable to connect to the database\n")
-        log_entry(logfilename,"I am unable to connect to the database\n")
+### --------------------------------INTERACTIVE INTERFACE -------------------------------- ###
 
-    # create_order(conn, order_type, product_grade, lead_time, period_length)
+def main_menu():
+    os.system('clear')
+    print('SO DANCA PURCHASE PLANNER\n')
+    print('-'*25+'Interactive interface'+'-'*25+'\n')
+    print('These are the configured companies:\n')
+    key_idx = 1
+    for key in config:
+        print (key)
+        key_idx += 1
+    print('\n')
+    # print('1 - List/select configured companies')
+    print('1 - Run purchase plan manually')
+    print('2 - Update/Install configuration')
+    print('Q - Quit')
+    choice = input(" >> ")
+    exec_menu(choice)
+    return
 
+
+def exec_menu(choice):
+    os.system('clear')
+    ch = choice.lower()
+    if ch == '':
+        menu_actions['main_menu']()
+    else:
+        try:
+            menu_actions[ch]()
+        except KeyError:
+            print('Invalid selection. Please try again. \n')
+            menu_actions['main_menu']()
+    return
+
+def back():
+    menu_actions['main_menu']()
+
+def exit():
+    sys.exit(0)
+
+def run_all(conn , companycode):
     lead_normal = int(config[companycode]['lead_normal'])
     lead_rush = int(config[companycode]['lead_rush'])
     plan_period_a = int(config[companycode]['plan_period_a'])
@@ -523,13 +704,324 @@ def main(companycode):
         raise
         pass
 
+def manual_run():
+    os.system('clear')
 
-    # cur3.close()
-    print('Completion time: ',datetime.datetime.now())
-    log_entry(logfilename,'Completion time: '+(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+    types_list = ['R','N']
+    grades_list = ['A','B','C','D']
+    print('Select company to to run:')
+    key_idx = 1
+    company_idx = {}
+    for key in config:
+        print (key_idx,'-',key)
+        company_idx[key_idx] = key
+        key_idx += 1
+    print('\nM - Main Menu')
+    print('Q - Quit')
+    while True:
+        choice = input(" >> ")
+        ch = choice.lower()
+        if ch == 'q':
+            print('Good bye!')
+            sys.exit(0)
+        elif ch == 'm':
+            main_menu()
+            break
+        elif company_idx[ch] in config:
+            companycode = company_idx[ch]
+            break
+
+        else:
+            print('Not a valid option. Try again')
+
+    print('Company selected - ',companycode,'\n')
+
+    dbname = config[companycode]['db_name']
+    db_server_address = config[companycode]['db_server_address']
+    login = config[companycode]['login']
+    passwd = config[companycode]['passwd']
+
+    logfilename = config[companycode]['logfilename']#'purchase_planner.log'
+
+    try:
+        dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
+        print(dsn)
+        conn = psycopg2.connect(dsn)
+        log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+        drop_results_table(conn)
+
+    except:
+        print(logfilename,"I am unable to connect to the database\n")
+        log_entry(logfilename,"I am unable to connect to the database\n")
+
+
+    while True:
+        print('Select run procedure:')
+        print('Run (A)ll')
+        print('Run by product (G)rade')
+        print('Run by order (T)ype')
+        print('Run (S)ingle selection')
+        print('\nM - Main menu')
+        print('Q - Quit')
+        choice = input(" >> ")
+        ch = choice.lower()
+        print('\nOption selected:',choice)
+
+        run_choice = ch
+        if runcode in ['a','g','t','s']:
+            break
+        elif ch == 'q':
+            print('Good bye!')
+            sys.exit(0)
+        elif ch == 'm':
+            main_menu()
+            break
+        else:
+            os.system('clear')
+            print('Not a valid option. Try again\n')
+
+    for grade in grades_list:
+        varname = 'plan_period_'+str(grade)
+        plan_period[grade] =  int(config[companycode][varname])
+
+    if run_choice == 'a':
+
+        log_str = ('Manual run started - Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+        start_clock = datetime.datetime.now()
+        log_entry(config[companycode]['logfilename'],log_str)
+        print(log_str)
+
+        run_all(conn,companycode)
+
+        log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        log_entry(logfilename,log_str)
+        print('Runtime: ',str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,"="*80+"\n")
+
+    elif run_choice == 'g':
+        while True:
+            print('Select product grade to process:')
+            for grade in grades_list:
+                print(grade)
+            choice = input(" >> ")
+            run_grade = choice.upper()
+
+            if run_grade in grades_list:
+                break
+            else:
+                print('Option not valid')
+
+        while True:
+            print('Clear current results table? (Y/N)')
+            choice = input(" >> ")
+            ch = choice.lower()
+            clear_table =  ch
+            if clear_table in ['y','n']:
+                break
+            else:
+                print('Option not valid')
+
+        if clear_table == 'y':
+            try:
+                drop_results_table(conn,companycode)
+                log_str = "Results table cleared."
+            except Exception as e:
+                log_entry(logfilename,'Could not clear table'+str(e))
+                raise
+
+        elif clear_table == 'n':
+            pass
+
+        log_str = ('Manual run started - Running only {0} grade and all order types - started at:{1}').format(run_grade,(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+        start_clock = datetime.datetime.now()
+        log_entry(config[companycode]['logfilename'],log_str)
+        print(log_str)
+
+        for order_type in types_list:
+            if order_type == 'N':
+                lead_time = lead_normal
+            elif order_type == 'R':
+                lead_time = lead_rush
+
+            create_order(conn, order_type, run_grade, lead_time, plan_period[run_grade], companycode)
+
+        log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        log_entry(logfilename,log_str)
+        print('Runtime: ',str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,"="*80+"\n")
+
+    elif run_choice == 't':
+        while True:
+            print('Select order type to process:')
+            for order_type in type_list:
+                print(order_type)
+            choice = input(" >> ")
+            run_type = choice.upper()
+
+            if order_type in type_list:
+                break
+            else:
+                print('Option not valid')
+
+        while True:
+            print('Clear current results table? (Y/N)')
+            choice = input(" >> ")
+            ch = choice.lower()
+            clear_table =  ch
+            if clear_table in ['y','n']:
+                break
+            else:
+                print('Option not valid')
+
+        if clear_table == 'y':
+            try:
+                drop_results_table(conn,companycode)
+                log_str = "Results table cleared."
+            except Exception as e:
+                log_entry(logfilename,'Could not clear table'+str(e))
+                raise
+
+        elif clear_table == 'n':
+            pass
+
+        log_str = ('Manual run started - Running all grades and only order type {0} - started at:{1}').format(order_type,(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+        start_clock = datetime.datetime.now()
+        log_entry(config[companycode]['logfilename'],log_str)
+        print(log_str)
+
+        for grade in grades_list:
+            if order_type == 'N':
+                lead_time = lead_normal
+            elif order_type == 'R':
+                lead_time = lead_rush
+            if grade in ['C','D'] and order_type == 'N':
+                log_str = 'Skipping order grade {0}, type {1} - {2}'.format(grade, order_type, datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+                print(log_str)
+                log_entry(logfilename,log_str)
+            else:
+                create_order(conn, order_type, run_grade, lead_time, plan_period[grade], companycode)
+
+        log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        log_entry(logfilename,log_str)
+        print('Runtime: ',str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,"="*80+"\n")
+
+    elif run_choice == 's':
+        while True:
+            print('\nSelect product grade to process:')
+            for order_type in type_list:
+                print(order_type)
+            choice = input(" >> ")
+            run_type = choice.upper()
+
+            if order_type in type_list:
+                break
+            else:
+                print('Option not valid')
+
+        while True:
+            print('\nSelect product grade to process:')
+            for grade in grades_list:
+                print(grade)
+            choice = input(" >> ")
+            run_grade = choice.upper()
+
+            if run_grade in grades_list:
+                break
+            else:
+                print('Option not valid')
+
+        while True:
+            print('Clear current results table? (Y/N)')
+            choice = input(" >> ")
+            ch = choice.lower()
+            clear_table =  ch
+            if clear_table in ['y','n']:
+                break
+            else:
+                print('Option not valid')
+
+        if clear_table == 'y':
+            try:
+                drop_results_table(conn,companycode)
+                log_str = "Results table cleared."
+            except Exception as e:
+                log_entry(logfilename,'Could not clear table'+str(e))
+                raise
+
+        elif clear_table == 'n':
+            pass
+
+        if order_type == 'N':
+            lead_time = lead_normal
+        elif order_type == 'R':
+            lead_time = lead_rush
+
+        log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+        start_clock = datetime.datetime.now()
+        log_entry(config[companycode]['logfilename'],log_str)
+        print(log_str)
+
+        create_order(conn, order_type, run_grade, lead_time, plan_period[run_grade], companycode)
+
+        log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        log_entry(logfilename,log_str)
+        print('Runtime: ',str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,"="*80+"\n")
+
+    else:
+        log_str="{} Something went wrong. ERR:010".format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        print(log_str)
+        log_entry(logfilename,log_str)
+
+def install_update():
+    print('Install_update')
+
+menu_actions = {
+    'main_menu' : main_menu,
+    '1' : manual_run,
+    '2' : install_update,
+    'm' : back,
+    'q' : exit
+}
+
+### ------------------------------------ MAIN() ------------------------------------------ ###
+
+def main(companycode):
+    dbname = config[companycode]['db_name']
+    db_server_address = config[companycode]['db_server_address']
+    login = config[companycode]['login']
+    passwd = config[companycode]['passwd']
+
+    logfilename = config[companycode]['logfilename']#'purchase_planner.log'
+
+    try:
+        dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
+        print(dsn)
+        conn = psycopg2.connect(dsn)
+        log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+        drop_results_table(conn)
+
+    except:
+        print(logfilename,"I am unable to connect to the database\n")
+        log_entry(logfilename,"I am unable to connect to the database\n")
+
+
+
+    # create_order(conn, order_type, product_grade, lead_time, period_length)
+    log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+    start_clock = datetime.datetime.now()
+    log_entry(config[companycode]['logfilename'],log_str)
+    print(log_str)
+    run_all(conn, companycode)
     print('Runtime: ',str(datetime.datetime.now()- start_clock))
     log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
     log_entry(logfilename,"="*80+"\n")
+
 # fil.close()
     # print(vendor_parent)
 # ========================== EXECUTION CALL ========================================================== #
@@ -538,13 +1030,23 @@ config = configparser.ConfigParser()
 config.sections()
 config.read('config.ini')
 
-cmd_param = sys.argv[1]
+try:
+    cmd_param = sys.argv[1]
+except Exception as e:
+    print('Missing argument. Try {} -h for help\n'.format(sys.argv[0]))
+    sys.exit(2)
 
 if cmd_param in config:
     companycode = str(cmd_param)
     main(companycode)
 elif cmd_param == '-i':
-    print("Start interactive")
+    os.system('clear')
+    print("Starting interactive mode")
+    main_menu()
+elif cmd_param == '-h':
+    help_str = (open('README','r')).read()
+    print(help_str)
+
 else:
-    print(cmd_param, 'is not a valid option. Use a company code or -i for interactive mode')
+    print(cmd_param, 'is not a valid option. Use a company code or -i for interactive mode or try -h for help.\n')
     sys.exit(2)
