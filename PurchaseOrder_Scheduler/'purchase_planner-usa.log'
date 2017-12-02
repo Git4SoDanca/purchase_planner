@@ -1,0 +1,251 @@
+
+
+Process started - 10:51:35 - 2017-12-01
+Running all grades and order types - started at:10:51:35 - 2017-12-01Starting run -- order_type: R Grade: A - 10:51:35 - 2017-12-01
+Ending run   -- order_type: R Grade: A - 11:06:46 - 2017-12-01
+Starting run -- order_type: R Grade: B - 11:06:46 - 2017-12-01
+Ending run   -- order_type: R Grade: B - 11:17:46 - 2017-12-01
+Starting run -- order_type: N Grade: A - 11:17:46 - 2017-12-01
+Ending run   -- order_type: N Grade: A - 11:33:14 - 2017-12-01
+Starting run -- order_type: N Grade: B - 11:33:14 - 2017-12-01
+Ending run   -- order_type: N Grade: B - 11:44:23 - 2017-12-01
+Starting run -- order_type: R Grade: C - 11:44:23 - 2017-12-01
+
+
+Process started - 13:10:05 - 2017-12-01
+
+
+Process started - 13:11:11 - 2017-12-01
+
+
+Process started - 13:12:08 - 2017-12-01
+
+
+Process started - 13:13:08 - 2017-12-01
+Manual run started - Running all grades and order types - started at:13:13:11 - 2017-12-01Starting run -- order_type: R Grade: A - 13:13:11 - 2017-12-01
+
+
+Process started - 13:13:28 - 2017-12-01
+Manual run started - Running only A grade and all order types - started at:13:13:36 - 2017-12-01
+
+Process started - 16:05:56 - 2017-12-01
+Manual run started - Running all grades and order types - started at:16:06:03 - 2017-12-01Starting run -- order_type: R Grade: A - 16:06:04 - 2017-12-01
+Cannot define rush window dates. ERR:011 16:06:04 - 2017-12-01
+'datetime.datetime' object has no attribute 'format'
+
+Process started - 16:07:13 - 2017-12-01
+
+
+Process started - 16:08:23 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:08:31 - 2017-12-01
+
+Process started - 16:22:43 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:22:57 - 2017-12-01
+
+Process started - 16:24:21 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:24:41 - 2017-12-01Starting run -- order_type: N Grade: A - 16:24:41 - 2017-12-01
+
+
+Process started - 16:26:51 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:26:59 - 2017-12-01Starting run -- order_type: N Grade: A - 16:26:59 - 2017-12-01
+
+
+Process started - 16:42:27 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:42:32 - 2017-12-01Starting run -- order_type: N Grade: A - 16:42:32 - 2017-12-01
+
+
+Process started - 16:43:23 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:43:29 - 2017-12-01Starting run -- order_type: N Grade: A - 16:43:29 - 2017-12-01
+
+
+Process started - 16:45:28 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:45:35 - 2017-12-01Starting run -- order_type: N Grade: A - 16:45:35 - 2017-12-01
+
+
+Process started - 16:47:15 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:47:20 - 2017-12-01Starting run -- order_type: N Grade: A - 16:47:20 - 2017-12-01
+
+
+Process started - 16:48:11 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:48:14 - 2017-12-01Starting run -- order_type: N Grade: A - 16:48:14 - 2017-12-01
+
+
+Process started - 16:48:59 - 2017-12-01
+Manual run started - Running all grades and only order type N - started at:16:49:05 - 2017-12-01Starting run -- order_type: N Grade: A - 16:49:05 - 2017-12-01
+
+
+Process started - 16:53:18 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:16:53:26 - 2017-12-01Starting run -- order_type: R Grade: A - 16:53:26 - 2017-12-01
+Cannot define rush window dates. ERR:011 16:53:26 - 2017-12-01
+'datetime.datetime' object has no attribute 'format'
+
+Process started - 16:56:04 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:16:56:10 - 2017-12-01Starting run -- order_type: R Grade: A - 16:56:10 - 2017-12-01
+Cannot define rush window dates. ERR:011 16:56:10 - 2017-12-01
+'datetime.datetime' object has no attribute 'format'
+
+Process started - 16:57:19 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:16:57:23 - 2017-12-01Starting run -- order_type: R Grade: A - 16:57:23 - 2017-12-01
+Cannot define rush window dates. ERR:011 16:57:23 - 2017-12-01
+name 'logfilename' is not defined
+
+Process started - 16:58:00 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:16:58:03 - 2017-12-01Starting run -- order_type: R Grade: A - 16:58:03 - 2017-12-01
+Cannot define rush window dates. ERR:011 16:58:03 - 2017-12-01
+name 'companycode' is not defined
+
+Process started - 16:58:28 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:16:58:32 - 2017-12-01Starting run -- order_type: R Grade: A - 16:58:32 - 2017-12-01
+Cannot query schedule dates. ERR:012 16:58:32 - 2017-12-01
+syntax error at or near ")"
+LINE 1: ...danca_shipment_schedule WHERE supplier_id = ('68',) AND cut_...
+                                                             ^
+Cannot define rush window dates. ERR:011 16:58:32 - 2017-12-01
+syntax error at or near ")"
+LINE 1: ...danca_shipment_schedule WHERE supplier_id = ('68',) AND cut_...
+                                                             ^
+
+
+Process started - 16:59:31 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:16:59:34 - 2017-12-01Starting run -- order_type: R Grade: A - 16:59:34 - 2017-12-01
+Cannot query schedule dates. ERR:012 16:59:34 - 2017-12-01
+operator does not exist: date >= integer
+LINE 1: ..._schedule WHERE supplier_id = 68 AND cut_off_date >= 2017-12...
+                                                             ^
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+Cannot define rush window dates. ERR:011 16:59:34 - 2017-12-01
+operator does not exist: date >= integer
+LINE 1: ..._schedule WHERE supplier_id = 68 AND cut_off_date >= 2017-12...
+                                                             ^
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+
+
+Process started - 17:00:37 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:00:39 - 2017-12-01Starting run -- order_type: R Grade: A - 17:00:39 - 2017-12-01
+
+
+Process started - 17:01:32 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:01:35 - 2017-12-01Starting run -- order_type: R Grade: A - 17:01:35 - 2017-12-01
+Cannot define rush window dates. ERR:011 17:01:35 - 2017-12-01
+No active exception to reraise
+
+Process started - 17:02:09 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:02:12 - 2017-12-01Starting run -- order_type: R Grade: A - 17:02:12 - 2017-12-01
+
+
+Process started - 17:08:35 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:08:40 - 2017-12-01Starting run -- order_type: R Grade: A - 17:08:40 - 2017-12-01
+
+
+Process started - 17:12:14 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:12:18 - 2017-12-01Starting run -- order_type: R Grade: A - 17:12:18 - 2017-12-01
+Cannot define rush window dates. ERR:011 17:12:18 - 2017-12-01
+list index out of range
+
+Process started - 17:21:31 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:21:37 - 2017-12-01Starting run -- order_type: R Grade: A - 17:21:37 - 2017-12-01
+
+
+Process started - 17:24:03 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:24:08 - 2017-12-01Starting run -- order_type: R Grade: A - 17:24:08 - 2017-12-01
+Cannot define rush window dates. ERR:011 17:24:08 - 2017-12-01
+'NoneType' object is not subscriptable
+
+Process started - 17:27:42 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:27:48 - 2017-12-01Starting run -- order_type: R Grade: A - 17:27:48 - 2017-12-01
+Cannot define rush window dates. ERR:011 17:27:48 - 2017-12-01
+'NoneType' object is not subscriptable
+
+Process started - 17:31:36 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:31:39 - 2017-12-01Starting run -- order_type: R Grade: A - 17:31:39 - 2017-12-01
+Ending run   -- order_type: R Grade: A - 17:31:40 - 2017-12-01
+Starting run -- order_type: R Grade: B - 17:31:40 - 2017-12-01
+Ending run   -- order_type: R Grade: B - 17:31:40 - 2017-12-01
+Starting run -- order_type: R Grade: C - 17:31:40 - 2017-12-01
+Ending run   -- order_type: R Grade: C - 17:31:41 - 2017-12-01
+Starting run -- order_type: R Grade: D - 17:31:41 - 2017-12-01
+Ending run   -- order_type: R Grade: D - 17:31:42 - 2017-12-01
+Manual run - Completion time: 17:31:42 - 2017-12-01Runtime: 0:00:02.591309================================================================================
+
+
+Process started - 17:49:24 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:49:29 - 2017-12-01Starting run -- order_type: R Grade: A - 17:49:29 - 2017-12-01
+Ending run   -- order_type: R Grade: A - 17:49:30 - 2017-12-01
+Starting run -- order_type: R Grade: B - 17:49:30 - 2017-12-01
+Ending run   -- order_type: R Grade: B - 17:49:30 - 2017-12-01
+Starting run -- order_type: R Grade: C - 17:49:30 - 2017-12-01
+Ending run   -- order_type: R Grade: C - 17:49:31 - 2017-12-01
+Starting run -- order_type: R Grade: D - 17:49:31 - 2017-12-01
+Ending run   -- order_type: R Grade: D - 17:49:32 - 2017-12-01
+Manual run - Completion time: 17:49:32 - 2017-12-01Runtime: 0:00:02.420194================================================================================
+
+
+Process started - 17:51:21 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:51:28 - 2017-12-01Starting run -- order_type: R Grade: A - 17:51:28 - 2017-12-01
+Ending run   -- order_type: R Grade: A - 17:51:28 - 2017-12-01
+Starting run -- order_type: R Grade: B - 17:51:28 - 2017-12-01
+Ending run   -- order_type: R Grade: B - 17:51:29 - 2017-12-01
+Starting run -- order_type: R Grade: C - 17:51:29 - 2017-12-01
+Ending run   -- order_type: R Grade: C - 17:51:29 - 2017-12-01
+Starting run -- order_type: R Grade: D - 17:51:29 - 2017-12-01
+Ending run   -- order_type: R Grade: D - 17:51:30 - 2017-12-01
+Manual run - Completion time: 17:51:30 - 2017-12-01Runtime: 0:00:02.611183================================================================================
+
+
+Process started - 17:51:58 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:52:03 - 2017-12-01Starting run -- order_type: R Grade: A - 17:52:03 - 2017-12-01
+Ending run   -- order_type: R Grade: A - 17:52:03 - 2017-12-01
+Starting run -- order_type: R Grade: B - 17:52:03 - 2017-12-01
+Ending run   -- order_type: R Grade: B - 17:52:04 - 2017-12-01
+Starting run -- order_type: R Grade: C - 17:52:04 - 2017-12-01
+Ending run   -- order_type: R Grade: C - 17:52:04 - 2017-12-01
+Starting run -- order_type: R Grade: D - 17:52:04 - 2017-12-01
+Ending run   -- order_type: R Grade: D - 17:52:05 - 2017-12-01
+Manual run - Completion time: 17:52:05 - 2017-12-01Runtime: 0:00:02.519465================================================================================
+
+
+Process started - 17:52:43 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:52:46 - 2017-12-01Starting run -- order_type: R Grade: A - 17:52:46 - 2017-12-01
+Ending run   -- order_type: R Grade: A - 17:52:47 - 2017-12-01
+Starting run -- order_type: R Grade: B - 17:52:47 - 2017-12-01
+Ending run   -- order_type: R Grade: B - 17:52:47 - 2017-12-01
+Starting run -- order_type: R Grade: C - 17:52:47 - 2017-12-01
+Ending run   -- order_type: R Grade: C - 17:52:47 - 2017-12-01
+Starting run -- order_type: R Grade: D - 17:52:47 - 2017-12-01
+Ending run   -- order_type: R Grade: D - 17:52:49 - 2017-12-01
+Manual run - Completion time: 17:52:49 - 2017-12-01Runtime: 0:00:02.571242================================================================================
+
+
+Process started - 17:53:40 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:17:53:44 - 2017-12-01Starting run -- order_type: R Grade: A - 17:53:44 - 2017-12-01
+Ending run   -- order_type: R Grade: A - 17:53:45 - 2017-12-01
+Starting run -- order_type: R Grade: B - 17:53:45 - 2017-12-01
+Ending run   -- order_type: R Grade: B - 17:53:45 - 2017-12-01
+Starting run -- order_type: R Grade: C - 17:53:45 - 2017-12-01
+Ending run   -- order_type: R Grade: C - 17:53:46 - 2017-12-01
+Starting run -- order_type: R Grade: D - 17:53:46 - 2017-12-01
+Ending run   -- order_type: R Grade: D - 17:53:47 - 2017-12-01
+Manual run - Completion time: 17:53:47 - 2017-12-01Runtime: 0:00:03.107145================================================================================
+
+
+Process started - 18:08:16 - 2017-12-01
+Manual run started - Running all grades and only order type R - started at:18:08:22 - 2017-12-01Starting run -- order_type: R Grade: A - 18:08:22 - 2017-12-01
+
+
+Process started - 18:22:24 - 2017-12-01
+Could not clear tabledrop_results_table() takes 1 positional argument but 2 were given
+
+Process started - 18:24:03 - 2017-12-01
+I am unable to connect to the database
+Manual run started - Running all grades and only order type R - started at:18:24:07 - 2017-12-01Starting run -- order_type: R Grade: A - 18:24:07 - 2017-12-01
+
+
+Process started - 18:24:49 - 2017-12-01
+I am unable to connect to the database
+Manual run started - Running all grades and only order type R - started at:18:24:53 - 2017-12-01Starting run -- order_type: R Grade: A - 18:24:53 - 2017-12-01
+Ending run   -- order_type: R Grade: A - 18:35:03 - 2017-12-01
+Starting run -- order_type: R Grade: B - 18:35:03 - 2017-12-01
+Ending run   -- order_type: R Grade: B - 18:42:58 - 2017-12-01
+Starting run -- order_type: R Grade: C - 18:42:58 - 2017-12-01
+Ending run   -- order_type: R Grade: C - 19:04:17 - 2017-12-01
+Starting run -- order_type: R Grade: D - 19:04:17 - 2017-12-01

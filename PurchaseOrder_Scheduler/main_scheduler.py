@@ -24,7 +24,44 @@ def log_entry(logfile, entry_text):
 def roundup(x,y):
   return int(math.ceil(x/y))*y
 
-def create_order(conn, order_type, product_grade, lead_time, period_length, companycode):
+def get_rush_expected_date(conn, vendor_id, now_date, companycode):
+    sub_cur = conn.cursor()
+    schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date >= '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
+    logfilename = config[companycode]['logfilename']
+    try:
+        # print(schedule_query)
+        sub_cur.execute(schedule_query)
+
+    except Exception as e:
+        log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        print(log_str)
+        log_entry(logfilename, log_str+'\n'+str(e))
+        raise
+
+    first_date = sub_cur.fetchone()
+    cut_off_date = first_date[3]
+    ship_date = first_date[4]
+
+    schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND expected_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, ship_date)
+    logfilename = config[companycode]['logfilename']
+    try:
+        # print(schedule_query)
+        sub_cur.execute(schedule_query)
+
+    except Exception as e:
+        log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        print(log_str)
+        log_entry(logfilename, log_str+'\n'+str(e))
+        raise
+
+    second_date = sub_cur.fetchone()
+    forecast_window_limit_date = second_date[4]
+    sub_cur.close()
+
+    return cut_off_date, ship_date, forecast_window_limit_date
+
+# def create_order(conn, order_type, product_grade, lead_time, period_length, companycode):
+def create_order(conn, order_type, product_grade, period_length, companycode):
 
     logfilename = config[companycode]['logfilename']
 
@@ -33,13 +70,9 @@ def create_order(conn, order_type, product_grade, lead_time, period_length, comp
     cur2 = conn.cursor()
 
     now = datetime.datetime.now()
+
     now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 26)).strftime('%Y-%m-%d')
     # print(now, now_minus_6mo)
-
-    initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
-    forecast_window_limit = int(config[companycode]['forecast_window_limit']) #weeks
-    forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+lead_time)
-    # ^^^ Sets end date for planning window, may be reduced if process takes too long to run, adjust to be made by changing forecast_window_limit
 
     print("Starting run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
     log_entry(logfilename,"Starting run -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
@@ -66,6 +99,28 @@ def create_order(conn, order_type, product_grade, lead_time, period_length, comp
     # print(vendor_array[0])
 
     for vendor in vendor_array:
+
+        # Setting dates for purchase period calculated dates for normal shipments and queried for rush
+        if order_type == 'N':
+            # print('DEBUG ORDER "R":',vendor, order_type)
+            lead_time = int(config[companycode]['lead_normal'])
+            initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
+            forecast_window_limit = int(config[companycode]['forecast_window_limit_normal']) #weeks
+            forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+lead_time)
+
+        elif order_type == 'R':
+            # forecast_window_limit = int(config[companycode]['forecast_window_limit_rush']) #weeks DELETE IF THIS DECLARATION IS NOT NEEDED
+            # print('DEBUG ORDER "R":',vendor, order_type)
+            try:
+                # print('DEBUG:',vendor, order_type)
+                cut_off_date, initial_regular_ship_date, forecast_window_limit_date = get_rush_expected_date(conn, vendor[0], now.strftime('%Y-%m-%d'), companycode)
+                # print('DEBUG expected_date return:',cut_off_date, initial_regular_ship_date, forecast_window_limit_date)
+
+            except Exception as e:
+                log_str = 'Cannot define rush window dates. ERR:011 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+                print(log_str)
+                log_entry(logfilename, log_str+'\n'+str(e))
+                raise
 
         try:
             vendor_parent = vendor[1]
@@ -119,10 +174,10 @@ def create_order(conn, order_type, product_grade, lead_time, period_length, comp
             purchase_period = period_length #in weeks
 
             # print(product)
-
+            # print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
             for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
                 start_date = pdate.strftime('%Y-%m-%d')
-                # print(start_date)
+                # print('DEBUG - Top of pdate loop:',start_date)
                 end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
                 start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
                 end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
@@ -142,8 +197,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length, comp
                     raise Exception
                     pass
 
-                # if 1: ### TEST
-                if product_qto[0][0] > 0: ### Production
+                if 1: ### TEST
+                # if product_qto[0][0] > 0: ### Production
                 # print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
                     prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qhs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
@@ -169,8 +224,8 @@ def create_order(conn, order_type, product_grade, lead_time, period_length, comp
                         product_vendor = vendor[0]
                         product_group = '0'
 
-                    # print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
                     # qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
+                    # print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
 
                     insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id, product_grade, order_mod, qty_2_ord,
                     qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
@@ -193,11 +248,12 @@ def create_order(conn, order_type, product_grade, lead_time, period_length, comp
     print("Ending run   -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
     log_entry(logfilename,"Ending run   -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 
-def drop_results_table(conn):
+def drop_results_table(conn, companycode):
 
     cur = conn.cursor()
 
     start_clock = datetime.datetime.now()
+    logfilename=config[companycode]['logfilename']
 
     # Clearing results table - Resetting for new data
     clear_table_query = """
@@ -641,14 +697,15 @@ def create_functions(conn,companycode):
 ### --------------------------------INTERACTIVE INTERFACE -------------------------------- ###
 
 def main_menu():
-    os.system('clear')
+    # os.system('clear')
     print('SO DANCA PURCHASE PLANNER\n')
     print('-'*25+'Interactive interface'+'-'*25+'\n')
     print('These are the configured companies:\n')
-    key_idx = 1
     for key in config:
-        print (key)
-        key_idx += 1
+        if key == 'DEFAULT':
+            pass
+        else:
+            print (key)
     print('\n')
     # print('1 - List/select configured companies')
     print('1 - Run purchase plan manually')
@@ -659,8 +716,9 @@ def main_menu():
     return
 
 
+
 def exec_menu(choice):
-    os.system('clear')
+    # os.system('clear')
     ch = choice.lower()
     if ch == '':
         menu_actions['main_menu']()
@@ -679,6 +737,7 @@ def exit():
     sys.exit(0)
 
 def run_all(conn , companycode):
+    logfilename = config[companycode]['logfilename']
     lead_normal = int(config[companycode]['lead_normal'])
     lead_rush = int(config[companycode]['lead_rush'])
     plan_period_a = int(config[companycode]['plan_period_a'])
@@ -687,12 +746,12 @@ def run_all(conn , companycode):
     plan_period_d = int(config[companycode]['plan_period_d'])
 
     try:
-        create_order(conn, 'R', 'A', lead_rush, plan_period_a, companycode)
-        create_order(conn, 'R', 'B', lead_rush, plan_period_b, companycode)
-        create_order(conn, 'N', 'A', lead_normal, plan_period_a, companycode)
-        create_order(conn, 'N', 'B', lead_normal, plan_period_b, companycode)
-        create_order(conn, 'R', 'C', lead_rush, plan_period_c, companycode)
-        create_order(conn, 'R', 'D', lead_rush, plan_period_d, companycode)
+        create_order(conn, 'R', 'A', plan_period_a, companycode)
+        create_order(conn, 'R', 'B', plan_period_b, companycode)
+        create_order(conn, 'N', 'A', plan_period_a, companycode)
+        create_order(conn, 'N', 'B', plan_period_b, companycode)
+        create_order(conn, 'R', 'C', plan_period_c, companycode)
+        create_order(conn, 'R', 'D', plan_period_d, companycode)
 
     except KeyboardInterrupt:
         print("Interrupted by user")
@@ -705,36 +764,41 @@ def run_all(conn , companycode):
         pass
 
 def manual_run():
-    os.system('clear')
+    # os.system('clear')
 
     types_list = ['R','N']
     grades_list = ['A','B','C','D']
-    print('Select company to to run:')
-    key_idx = 1
-    company_idx = {}
+    print('\nSelect company to to run:')
+
+    company_idx = []
     for key in config:
-        print (key_idx,'-',key)
-        company_idx[key_idx] = key
-        key_idx += 1
+        company_idx.append(key)
+
+    for k in range(1, len(company_idx)):
+        print(k,'-',company_idx[k])
+
     print('\nM - Main Menu')
     print('Q - Quit')
     while True:
         choice = input(" >> ")
         ch = choice.lower()
+
+        print(ch)
         if ch == 'q':
             print('Good bye!')
             sys.exit(0)
         elif ch == 'm':
+            raise
             main_menu()
             break
-        elif company_idx[ch] in config:
-            companycode = company_idx[ch]
+        elif int(ch) in range(1,len(company_idx)):
+            companycode = company_idx[int(ch)]
             break
 
         else:
             print('Not a valid option. Try again')
 
-    print('Company selected - ',companycode,'\n')
+    print('\nCompany selected - ',companycode,'\n')
 
     dbname = config[companycode]['db_name']
     db_server_address = config[companycode]['db_server_address']
@@ -745,7 +809,6 @@ def manual_run():
 
     try:
         dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
-        print(dsn)
         conn = psycopg2.connect(dsn)
         log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
         drop_results_table(conn)
@@ -757,18 +820,18 @@ def manual_run():
 
     while True:
         print('Select run procedure:')
-        print('Run (A)ll')
-        print('Run by product (G)rade')
-        print('Run by order (T)ype')
-        print('Run (S)ingle selection')
-        print('\nM - Main menu')
-        print('Q - Quit')
+        print(' Run (A)ll')
+        print(' Run by product (G)rade')
+        print(' Run by order (T)ype')
+        print(' Run (S)ingle selection')
+        print('\n M - Main menu')
+        print(' Q - Quit')
         choice = input(" >> ")
         ch = choice.lower()
         print('\nOption selected:',choice)
 
         run_choice = ch
-        if runcode in ['a','g','t','s']:
+        if run_choice in ['a','g','t','s']:
             break
         elif ch == 'q':
             print('Good bye!')
@@ -780,6 +843,7 @@ def manual_run():
             os.system('clear')
             print('Not a valid option. Try again\n')
 
+    plan_period = {}
     for grade in grades_list:
         varname = 'plan_period_'+str(grade)
         plan_period[grade] =  int(config[companycode][varname])
@@ -839,12 +903,11 @@ def manual_run():
         print(log_str)
 
         for order_type in types_list:
-            if order_type == 'N':
-                lead_time = lead_normal
-            elif order_type == 'R':
-                lead_time = lead_rush
-
-            create_order(conn, order_type, run_grade, lead_time, plan_period[run_grade], companycode)
+        #     if order_type == 'N':  # DELETE IF NOT NEEDED
+        #         lead_time = lead_normal
+        #     elif order_type == 'R':
+        #         lead_time = lead_rush
+            create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
         log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
         log_entry(logfilename,log_str)
@@ -855,12 +918,12 @@ def manual_run():
     elif run_choice == 't':
         while True:
             print('Select order type to process:')
-            for order_type in type_list:
+            for order_type in types_list:
                 print(order_type)
             choice = input(" >> ")
-            run_type = choice.upper()
+            order_type = choice.upper()
 
-            if order_type in type_list:
+            if order_type in types_list:
                 break
             else:
                 print('Option not valid')
@@ -892,16 +955,17 @@ def manual_run():
         print(log_str)
 
         for grade in grades_list:
-            if order_type == 'N':
-                lead_time = lead_normal
-            elif order_type == 'R':
-                lead_time = lead_rush
+        #     if order_type == 'N': #DELETE IF NOT NEEDED
+        #         lead_time = config[companycode]['lead_normal']
+        #     elif order_type == 'R':
+        #         lead_time = lead_rush
+
             if grade in ['C','D'] and order_type == 'N':
                 log_str = 'Skipping order grade {0}, type {1} - {2}'.format(grade, order_type, datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
                 print(log_str)
                 log_entry(logfilename,log_str)
             else:
-                create_order(conn, order_type, run_grade, lead_time, plan_period[grade], companycode)
+                create_order(conn, order_type, grade, plan_period[grade], companycode)
 
         log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
         log_entry(logfilename,log_str)
@@ -912,12 +976,12 @@ def manual_run():
     elif run_choice == 's':
         while True:
             print('\nSelect product grade to process:')
-            for order_type in type_list:
+            for order_type in types_list:
                 print(order_type)
             choice = input(" >> ")
             run_type = choice.upper()
 
-            if order_type in type_list:
+            if order_type in types_list:
                 break
             else:
                 print('Option not valid')
@@ -955,17 +1019,17 @@ def manual_run():
         elif clear_table == 'n':
             pass
 
-        if order_type == 'N':
-            lead_time = lead_normal
-        elif order_type == 'R':
-            lead_time = lead_rush
+        # if order_type == 'N': # DELETE IF NOT NEEDED
+        #     lead_time = lead_normal
+        # elif order_type == 'R':
+        #     lead_time = lead_rush
 
         log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
         start_clock = datetime.datetime.now()
         log_entry(config[companycode]['logfilename'],log_str)
         print(log_str)
 
-        create_order(conn, order_type, run_grade, lead_time, plan_period[run_grade], companycode)
+        create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
         log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
         log_entry(logfilename,log_str)
@@ -981,14 +1045,6 @@ def manual_run():
 def install_update():
     print('Install_update')
 
-menu_actions = {
-    'main_menu' : main_menu,
-    '1' : manual_run,
-    '2' : install_update,
-    'm' : back,
-    'q' : exit
-}
-
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
 def main(companycode):
@@ -1001,7 +1057,6 @@ def main(companycode):
 
     try:
         dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
-        print(dsn)
         conn = psycopg2.connect(dsn)
         log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
         drop_results_table(conn)
@@ -1010,9 +1065,6 @@ def main(companycode):
         print(logfilename,"I am unable to connect to the database\n")
         log_entry(logfilename,"I am unable to connect to the database\n")
 
-
-
-    # create_order(conn, order_type, product_grade, lead_time, period_length)
     log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
     start_clock = datetime.datetime.now()
     log_entry(config[companycode]['logfilename'],log_str)
@@ -1024,11 +1076,39 @@ def main(companycode):
 
 # fil.close()
     # print(vendor_parent)
-# ========================== EXECUTION CALL ========================================================== #
+### --------------------------------- GLOBAL SECTION -------------------------------------- ###
 
 config = configparser.ConfigParser()
 config.sections()
 config.read('config.ini')
+
+### ----------------------------- MENU DEFINITIONS ---------------------------------------- ###
+
+menu_actions = {
+    'main_menu' : main_menu,
+    '1' : manual_run,
+    '2' : install_update,
+    'm' : back,
+    'q' : exit
+}
+
+# run_menu_actions = {
+#     'main_menu' : main_menu,
+#     'm' : back,
+#     'q' : exit
+# }
+#
+# # Dynamically populating company list into sub-menu
+# key_idx = 1
+# for key in config:
+#     if key == 'DEFAULT':
+#         pass
+#     else:
+#         print (key_idx,'-',key)
+#         run_menu_actions[key_idx] = manual_run(key)
+#         key_idx += 1
+
+### -------------------------------- MAIN CALL -------------------------------------------- ###
 
 try:
     cmd_param = sys.argv[1]
