@@ -197,8 +197,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
                     raise Exception
                     pass
 
-                if 1: ### TEST
-                # if product_qto[0][0] > 0: ### Production
+                # if 1: ### TEST
+                if product_qto[0][0] > 0: ### Production
                 # print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
                     prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qhs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
