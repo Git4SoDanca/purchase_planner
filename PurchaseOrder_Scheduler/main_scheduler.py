@@ -9,7 +9,9 @@ from dateutil import rrule
 import math
 import configparser
 import os,sys,getopt
-
+import poplib
+import email
+import csv
 
 class reg(object):
     def __init__(self, cursor, registro):
@@ -694,6 +696,410 @@ def create_functions(conn,companycode):
         log_entry(logfilename,str(e))
         raise
 
+def add_check_digit(upc_str):
+
+    upc_str = str(upc_str)
+    if len(upc_str) != 12:
+        raise Exception("Invalid length")
+
+    odd_sum = 0
+    even_sum = 0
+    for i, char in enumerate(upc_str):
+        j = i+1
+        if j % 2 == 0:
+            even_sum += int(char)
+        else:
+            odd_sum += int(char)
+
+    total_sum = (odd_sum * 3) + even_sum
+    mod = total_sum % 10
+    check_digit = 10 - mod
+    if check_digit == 10:
+        check_digit = 0
+    return upc_str + str(check_digit)
+
+def parse_attachments(conn, companycode):
+
+    filepath = config[companycode]['filepath']
+    cur = conn.cursor()
+    logfilename = config[companycode]['logfilename']
+
+    email_date = now = (datetime.datetime.now()).strftime('%Y-%m-%d')
+
+    check_table_query = "select * from information_schema.tables where table_name = '{0}'".format('sodanca_estoque_pulmao')
+    # print(check_table_query)
+    cur.execute(check_table_query)
+    num_tables = cur.fetchone()
+    # print(num_tables)
+
+
+    create_barcode_audit_query = """
+            DROP TABLE IF EXISTS public.sodanca_pp_barcode_audit;
+
+        CREATE TABLE public.sodanca_pp_barcode_audit
+        (
+            barcode integer NOT NULL,
+            product_description character varying(128) COLLATE pg_catalog."default",
+            CONSTRAINT sodanca_pp_barcode_audit_pkey PRIMARY KEY (barcode)
+        )
+        WITH (
+            OIDS = FALSE
+        )
+        TABLESPACE pg_default;
+
+        ALTER TABLE public.sodanca_pp_barcode_audit
+            OWNER to sodanca;
+    """
+    try:
+        cur.execute(create_barcode_audit_query)
+    except Exception as e:
+        now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+        log_str = "Cannot drop table sodanca_pp_barcode_audit. ERR:102 {0}\n\n{1}".format(now, str(e))
+        print(log_str)
+        log_entry(logfilename, log_str)
+
+    if num_tables == None:
+        create_table_sql = """
+            CREATE TABLE public.sodanca_estoque_pulmao
+            (
+                id serial NOT NULL,
+                email_date date NOT NULL,
+                product_id integer NOT NULL,
+                product_name character varying(64) COLLATE pg_catalog."default",
+                quantity numeric,
+                quantity_available numeric,
+                CONSTRAINT sodanca_estoque_pulmao_pkey PRIMARY KEY (id)
+            )
+            WITH (
+                OIDS = FALSE
+            )
+            TABLESPACE pg_default;
+
+            ALTER TABLE public.sodanca_estoque_pulmao
+                OWNER to sodanca;
+            COMMENT ON TABLE public.sodanca_estoque_pulmao
+                IS 'This is updated daily from the email sent from Soles, by default the data is cycled every 12 months, this can be adjusted on the config file';
+        """
+        try:
+            cur.execute(create_table_sql)
+            conn.commit()
+        except Exception as e:
+            now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+            log_str = "Cannot create table sodanca_estoque_pulmao. ERR:012 {1} \n {0}".format(str(e), now)
+            print(log_str)
+            log_entry(logfilename,log_str)
+
+    for fn in os.listdir('attachments'):
+        filename = filepath+fn
+        fileobj = open(filename, 'rt', encoding='iso-8859-1')
+        lines = list(csv.reader(fileobj, delimiter=';'))
+
+        for line in lines[1:]:
+            qty_in_hotstock =int(line[6])
+            product_barcode = add_check_digit(line[13])
+            # print("'{0}',".format(product_barcode))
+
+            product_query = """SELECT product_product.id, product_product.name FROM product_barcode
+                LEFT JOIN product_product ON product_product.id = product_barcode.product_id
+                WHERE product_barcode.barcode = '{0}'
+            """.format(str(product_barcode))
+
+            try:
+                cur.execute(product_query)
+                products = cur.fetchall()
+                if len(products) == 0:
+                    # print(product_barcode, line)
+                    now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+                    log_str = '{2} Barcode not defined in database barcode {0}, product details {1}'.format(product_barcode, line, now)
+                    # print(log_str)
+                    description = line[0]+line[1]+line[2]+line[3]+line[4]+line[5]
+                    insert_query = "INSERT INTO sodanca_pp_barcode_audit (barcode, product_description) VALUES ({0},{1})".format(product_barcode,description)
+                    log_entry(logfilename,log_str)
+
+                for product in products:
+                    product_id = product[0]
+                    product_name = product[1]
+
+                    insert_query = """ INSERT INTO sodanca_estoque_pulmao (--id,
+                    email_date, product_id, product_name, quantity, quantity_available) VALUES (
+                        --default,
+                        '{0}', {1}, '{2}', {3}, {3})""".format(email_date, product_id, product_name, qty_in_hotstock)
+                    cur.execute(insert_query)
+                    conn.commit()
+
+            except Exception as e:
+                now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+                log_str = "Error inserting in sodanca_estoque_pulmao. ERR:103 {0}\n\n{1}".format(now, str(e))
+                print(log_str)
+                log_entry(logfilename, log_str)
+                pass
+        fileobj.close()
+    cur.close()
+
+def next_shipping_date():
+    now = datetime.datetime.now()
+    weekday_ship = 4
+    now_weekday = int(now.strftime('%w'))
+    # print('DEBUG weekday',now_weekday)
+    # if now_weekday <= 2: #Monday or Tuesday
+    days_ahead = weekday_ship - now_weekday
+    if days_ahead <= 2: # Target day already happened this week
+        days_ahead += 7
+
+    else:
+        # days_ahead = weekday_ship - now_weekday
+        # if days_ahead <= 0: # Target day already happened this week
+        days_ahead += 14
+    next_date = (now + datetime.timedelta(days_ahead)).strftime('%Y-%m-%d')
+    # print('DEBUG weekday text',next_date)
+    return (next_date)
+
+def create_hotstock_order(conn, companycode):
+
+    parse_attachments(conn,companycode)
+    # print('DEBUG create_hotstock_order called')
+    hotstock_query = """SELECT sodanca_estoque_pulmao.* , sodanca_purchase_plan.id as PP_id, sodanca_purchase_plan.qty_2_ord as PP_q2o,
+        sodanca_purchase_plan.qty_2_ord_adj as PP_q2oAdj, sodanca_purchase_plan.*
+        FROM sodanca_estoque_pulmao LEFT JOIN sodanca_purchase_plan ON sodanca_estoque_pulmao.product_id = sodanca_purchase_plan.product_id
+        WHERE sodanca_estoque_pulmao.email_date = (SELECT MAX(email_date) FROM sodanca_estoque_pulmao) AND sodanca_purchase_plan.type = 'R'
+    """
+
+    # print("DEBUG hotstock_query", hotstock_query)
+    cur = conn.cursor()
+
+    now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
+    logfilename = config[companycode]['logfilename']
+
+    try:
+        cur.execute(hotstock_query)
+        hs_lines = cur.fetchall()
+    except Exception as e:
+        raise
+
+    for hs_line in hs_lines:
+        pp_q2o = hs_line[7]
+        ep_qa = hs_line[5]
+        pp_lin_id = hs_line[6]
+        ep_lin_id = hs_line[0]
+        expected_date = next_shipping_date()
+        vendor = hs_line[11]
+        vendor_group = hs_line[12]
+        creation_date = now_date
+        template_id = hs_line[15]
+        template_name = hs_line[16]
+        product_id = hs_line[17]
+        product_name = hs_line[18]
+        product_category_id = hs_line[19]
+        product_grade = hs_line[20]
+        order_mod = hs_line[21]
+        # qty_2_ord = hs_line[13]
+        # qty_2_ord_adj = hs_line[14]
+        qty_on_order = hs_line[24]
+        qty_on_order_period = hs_line[25]
+        qty_committed = hs_line[26]
+        qty_sold = hs_line[27]
+        expected_on_hand = hs_line[28]
+        qty_on_hand = hs_line[29]
+        sales_trend = hs_line[30]
+        # print('DEBUG hs_line:', hs_line)
+
+        if pp_q2o > ep_qa:
+            try:
+
+                pp_new_q2o = ep_qa
+                pp_order_qty = pp_q2o-ep_qa
+                pp_order_qty_adj = roundup(pp_order_qty,order_mod)
+                ep_avail_qty = 0
+
+                insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
+                    product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
+                    expected_on_hand, qty_on_hand, sales_trend) VALUES (default, 'H', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8}, '{9}', {10}, {11}, {12}, {13}, {14},
+                    {15}, {16}, {17}, {18}, {19})""".format(vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id,
+                    product_grade, 1, pp_new_q2o, pp_new_q2o, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend)
+                print('DEBUG insert_query',insert_query)
+                cur2 = conn.cursor()
+                cur2.execute(insert_query)
+                conn.commit()
+                cur2.close()
+
+            except Exception as e:
+                now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+                log_str = "Error updating orders with hot stock quantities. ERR:108 {0}\n\n{1}".format(now, str(e))
+                print(log_str)
+                log_entry(logfilename, log_str)
+
+            try:
+                update_query = """UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES ({0},{1}) WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+                print('DEBUG update 1', update_query)
+                cur2 = conn.cursor()
+                cur2.execute(update_query)
+                conn.commit()
+                cur2.close()
+                cur2 = conn.cursor()
+
+            except Exception as e:
+                now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+                log_str = "Error updating orders with hot stock quantities. ERR:109 {0}\n\n{1}".format(now, str(e))
+                print(log_str)
+                log_entry(logfilename, log_str)
+
+            try:
+                update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available ={0} WHERE id = {1}""".format(0,ep_lin_id)
+                print('DEBUG update 2', update_query)
+                cur2 = conn.cursor()
+                cur2.execute(update_query)
+                conn.commit()
+                cur2.close()
+
+            except Exception as e:
+                now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+                log_str = "Error updating orders with hot stock quantities. ERR:110 {0}\n\n{1}".format(now, str(e))
+                print(log_str)
+                log_entry(logfilename, log_str)
+            #     insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
+            #         product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
+            #         expected_on_hand, qty_on_hand, sales_trend) VALUES (default, 'H', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8}, '{9}', {10}, {11}, {12}, {13}, {14},
+            #         {15}, {16}, {17}, {18}, {19})""".format(vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id,
+            #         product_grade, 1, pp_new_q2o, pp_new_q2o, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend)
+            #     cur2 = conn.cursor()
+            #     cur2.execute(insert_query)
+            #     conn.commit()
+            #     cur2.close()
+            #
+            #
+            #
+            #
+            #     update_query = """UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES ({0},{1}) WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+            #     cur2.execute(update_query)
+            #     conn.commit()
+            #     cur2.close()
+            #     cur2 = conn.cursor()
+            #
+            #
+            #     update_query = """UPDATE sodanca_estoque_pulmao SET (quantity_available) VALUES ({0}) WHERE id = {1}""".format(0,ep_lin_id)
+            #     cur2.execute(update_query)
+            #     conn.commit()
+            #     cur2.close()
+            #
+            # except Exception as e:
+            #     now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+            #     log_str = "Error updating orders with hot stock quantities. ERR:104 {0}\n\n{1}".format(now, str(e))
+            #     print(log_str)
+            #     log_entry(logfilename, log_str)
+        elif pp_q2o <= ep_qa:
+            try:
+                pp_new_q2o = pp_q2o
+                pp_order_qty = 0
+                pp_order_qty_adj = 0
+                ep_avail_qty = ep_qa - pp_q2o
+
+                insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
+                    product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
+                    expected_on_hand, qty_on_hand, sales_trend) VALUES (default, 'H', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8}, '{9}', {10}, {11}, {12}, {13}, {14},
+                    {15}, {16}, {17}, {18}, {19})""".format(vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id,
+                    product_grade, 1, pp_new_q2o, pp_new_q2o, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend)
+                print('DEBUG insert_query',insert_query)
+                cur2 = conn.cursor()
+                cur2.execute(insert_query)
+                conn.commit()
+                cur2.close()
+
+            except Exception as e:
+                now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+                log_str = "Error updating orders with hot stock quantities. ERR:105 {0}\n\n{1}".format(now, str(e))
+                print(log_str)
+                log_entry(logfilename, log_str)
+
+            try:
+                update_query = """UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES ({0},{1}) WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+                print('DEBUG update 1', update_query)
+                cur2 = conn.cursor()
+                cur2.execute(update_query)
+                conn.commit()
+                cur2.close()
+                cur2 = conn.cursor()
+
+            except Exception as e:
+                now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+                log_str = "Error updating orders with hot stock quantities. ERR:106 {0}\n\n{1}".format(now, str(e))
+                print(log_str)
+                log_entry(logfilename, log_str)
+
+            try:
+                update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available ={0} WHERE id = {1}""".format(0,ep_lin_id)
+                print('DEBUG update 2', update_query)
+                cur2 = conn.cursor()
+                cur2.execute(update_query)
+                conn.commit()
+                cur2.close()
+
+            except Exception as e:
+                now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+                log_str = "Error updating orders with hot stock quantities. ERR:107 {0}\n\n{1}".format(now, str(e))
+                print(log_str)
+                log_entry(logfilename, log_str)
+
+    cur.close()
+
+    # hotstock_query = 'SELECT * FROM sodanca_estoque_pulmao WHERE email_date = (SELECT MAX(email_date) FROM sodanca_estoque_pulmao)'
+    # cur = conn.cursor()
+    #
+    # now =  datetime.datetime.now()
+    # try:
+    #     cur.execute(hotstock_query)
+    #     hs_lines = cur.fetchall()
+    # except Exception as e:
+    #     raise
+    #
+    # for hs_line in hs_lines:
+    #     product_id = hs_line[2]
+    #     qty_in_hotstock = hs_line[5]
+    #     check_order = "SELECT * FROM sodanca_purchase_plan WHERE type = 'R' AND product_id = {0} ORDER BY expected_date LIMIT 1".format(product_id)
+    #
+    #     # print(check_order)
+    #     try:
+    #         cur.execute(check_order)
+    #         order_result = cur.fetchall()
+    #         resultcount = len(order_result)
+    #         # print('DEBUG resultcount:', resultcount)
+    #         # print('DEBUG order_result:',order_result)
+    #         if resultcount > 0:
+    #             for order in order_result:
+    #                 qty_2_ord = order[13]
+    #                 line_id = order[0]
+    #                 order_mod = order[12]
+    #
+    #                 print('DEBUG ',order[9],order[13], qty_in_hotstock)
+    #                 if (qty_2_ord > 0 and qty_in_hotstock is not None):
+    #                     # print('DEBUG checking var types qty_in_hotstock: {0}  qty_2_ord: {1}'.format(type(qty_in_hotstock), type(qty_2_ord)))
+    #                     if qty_in_hotstock >= qty_2_ord:
+    #                         qty_2_ord = 0
+    #                         qty_2_ord_adj = 0
+    #                         next_shipping_date = next_shipping_date(now)
+    #                         print('DEBUG next_shipping_date:',next_shipping_date)
+    #                         insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
+    #                             product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
+    #                             expected_on_hand, qty_on_hand, sales_trend) VALUES (SELECT nextval('id'), 'H', vendor, vendor_group, creation_date, '{1}', template_id,
+    #                             template_name, product_id, product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period,
+    #                             qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend FROM sodanca_purchase_plan WHERE id = {0})""".format(line_id,next_shipping_date)
+    #
+    #                         print(insert_query)
+    #                         cur.execute(insert_query)
+    #                         conn.commit()
+    #                         update_sql = "UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES (0,0) WHERE id = {}".format(line_id)
+    #                         print(update_sql)
+    #                         cur.execute(update_sql)
+    #                         conn.commit()
+    #
+    #                     elif qty_in_hotstock < qty_2_ord:
+    #                         qty_2_ord = qty_2_ord - qty_in_hotstock
+    #                         qty_2_ord_adj = roundup(qty_2_ord,order_mod)
+    #                         update_sql = "UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES (0,0) WHERE id = {}".format(line_id)
+    #                         print(update_sql)
+    #                 # print(order)
+    #     except Exception as e:
+    #         print(str(e))
+
 ### --------------------------------INTERACTIVE INTERFACE -------------------------------- ###
 
 def main_menu():
@@ -714,8 +1120,6 @@ def main_menu():
     choice = input(" >> ")
     exec_menu(choice)
     return
-
-
 
 def exec_menu(choice):
     # os.system('clear')
@@ -739,7 +1143,6 @@ def exit():
 def run_all(conn , companycode):
     logfilename = config[companycode]['logfilename']
     lead_normal = int(config[companycode]['lead_normal'])
-    lead_rush = int(config[companycode]['lead_rush'])
     plan_period_a = int(config[companycode]['plan_period_a'])
     plan_period_b = int(config[companycode]['plan_period_b'])
     plan_period_c = int(config[companycode]['plan_period_c'])
@@ -747,26 +1150,29 @@ def run_all(conn , companycode):
 
     try:
         create_order(conn, 'R', 'A', plan_period_a, companycode)
-        create_order(conn, 'R', 'B', plan_period_b, companycode)
-        create_order(conn, 'N', 'A', plan_period_a, companycode)
-        create_order(conn, 'N', 'B', plan_period_b, companycode)
-        create_order(conn, 'R', 'C', plan_period_c, companycode)
-        create_order(conn, 'R', 'D', plan_period_d, companycode)
+        # create_order(conn, 'R', 'B', plan_period_b, companycode)
+        # create_order(conn, 'N', 'A', plan_period_a, companycode)
+        # create_order(conn, 'N', 'B', plan_period_b, companycode)
+        # create_order(conn, 'R', 'C', plan_period_c, companycode)
+        # create_order(conn, 'R', 'D', plan_period_d, companycode)
+
+        create_hotstock_order(conn, companycode)
 
     except KeyboardInterrupt:
         print("Interrupted by user")
         log_entry(logfilename,"Interrupted by user. ERR:006\n")
 
     except Exception as e:
-        print("Error on execution. ERR:007")
-        log_entry(logfilename,"Something unexpected happened. ERR:007\n")
+        log_str = "Something unexpected happened. ERR:007\n\n"+str(e)
+        print(log_str)
+        log_entry(logfilename,log_str)
         raise
         pass
 
 def manual_run():
     # os.system('clear')
 
-    types_list = ['R','N']
+    types_list = ['R','N', 'H']
     grades_list = ['A','B','C','D']
     print('\nSelect company to to run:')
 
@@ -813,10 +1219,11 @@ def manual_run():
         log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
         drop_results_table(conn)
 
-    except:
-        print(logfilename,"I am unable to connect to the database\n")
-        log_entry(logfilename,"I am unable to connect to the database\n")
 
+    except Exception as e:
+        log_str = "I am unable to connect to the database ERR:100\n\n" + str(e)
+        print(logfilename,log_str)
+        log_entry(logfilename,log_str)
 
     while True:
         print('Select run procedure:')
@@ -859,6 +1266,13 @@ def manual_run():
 
         log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
         log_entry(logfilename,log_str)
+        print('Runtime: ',str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,"="*80+"\n")
+
+        log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        log_entry(logfilename,log_str)
+        create_hotstock_order(conn, companycode)
         print('Runtime: ',str(datetime.datetime.now()- start_clock))
         log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
         log_entry(logfilename,"="*80+"\n")
@@ -915,6 +1329,14 @@ def manual_run():
         log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
         log_entry(logfilename,"="*80+"\n")
 
+        log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        log_entry(logfilename,log_str)
+        create_hotstock_order(conn, companycode)
+        print('Runtime: ',str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+        log_entry(logfilename,"="*80+"\n")
+
+
     elif run_choice == 't':
         while True:
             print('Select order type to process:')
@@ -949,29 +1371,39 @@ def manual_run():
         elif clear_table == 'n':
             pass
 
-        log_str = ('Manual run started - Running all grades and only order type {0} - started at:{1}').format(order_type,(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-        start_clock = datetime.datetime.now()
-        log_entry(config[companycode]['logfilename'],log_str)
-        print(log_str)
 
-        for grade in grades_list:
-        #     if order_type == 'N': #DELETE IF NOT NEEDED
-        #         lead_time = config[companycode]['lead_normal']
-        #     elif order_type == 'R':
-        #         lead_time = lead_rush
+        if order_type in ['R','N']:
+            log_str = ('Manual run started - Running all grades and only order type {0} - started at:{1}').format(order_type,(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+            start_clock = datetime.datetime.now()
+            log_entry(config[companycode]['logfilename'],log_str)
+            print(log_str)
 
-            if grade in ['C','D'] and order_type == 'N':
-                log_str = 'Skipping order grade {0}, type {1} - {2}'.format(grade, order_type, datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-                print(log_str)
-                log_entry(logfilename,log_str)
-            else:
-                create_order(conn, order_type, grade, plan_period[grade], companycode)
+            for grade in grades_list:
+            #     if order_type == 'N': #DELETE IF NOT NEEDED
+            #         lead_time = config[companycode]['lead_normal']
+            #     elif order_type == 'R':
+            #         lead_time = lead_rush
 
-        log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-        log_entry(logfilename,log_str)
-        print('Runtime: ',str(datetime.datetime.now()- start_clock))
-        log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
-        log_entry(logfilename,"="*80+"\n")
+                if grade in ['C','D'] and order_type == 'N':
+                    log_str = 'Skipping order grade {0}, type {1} - {2}'.format(grade, order_type, datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+                    print(log_str)
+                    log_entry(logfilename,log_str)
+                else:
+                    create_order(conn, order_type, grade, plan_period[grade], companycode)
+
+            log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+            log_entry(logfilename,log_str)
+            print('Runtime: ',str(datetime.datetime.now()- start_clock))
+            log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+            log_entry(logfilename,"="*80+"\n")
+        elif order_type == 'H':
+            log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+            log_entry(logfilename,log_str)
+            create_hotstock_order(conn, companycode)
+            print('Runtime: ',str(datetime.datetime.now()- start_clock))
+            log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+            log_entry(logfilename,"="*80+"\n")
+
 
     elif run_choice == 's':
         while True:
@@ -1023,19 +1455,41 @@ def manual_run():
         #     lead_time = lead_normal
         # elif order_type == 'R':
         #     lead_time = lead_rush
+        #
+        # log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+        # start_clock = datetime.datetime.now()
+        # log_entry(config[companycode]['logfilename'],log_str)
+        # print(log_str)
+        #
+        # create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
+        #
+        # log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        # log_entry(logfilename,log_str)
+        # print('Runtime: ',str(datetime.datetime.now()- start_clock))
+        # log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+        # log_entry(logfilename,"="*80+"\n")
 
-        log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-        start_clock = datetime.datetime.now()
-        log_entry(config[companycode]['logfilename'],log_str)
-        print(log_str)
+        if order_type in ['R','N']:
+            log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+            start_clock = datetime.datetime.now()
+            log_entry(config[companycode]['logfilename'],log_str)
+            print(log_str)
 
-        create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
+            create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
-        log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-        log_entry(logfilename,log_str)
-        print('Runtime: ',str(datetime.datetime.now()- start_clock))
-        log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
-        log_entry(logfilename,"="*80+"\n")
+            log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+            log_entry(logfilename,log_str)
+            print('Runtime: ',str(datetime.datetime.now()- start_clock))
+            log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+            log_entry(logfilename,"="*80+"\n")
+        elif order_type == 'H':
+            log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+            log_entry(logfilename,log_str)
+            create_hotstock_order(conn, companycode)
+            print('Runtime: ',str(datetime.datetime.now()- start_clock))
+            log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+            log_entry(logfilename,"="*80+"\n")
+
 
     else:
         log_str="{} Something went wrong. ERR:010".format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
@@ -1059,11 +1513,12 @@ def main(companycode):
         dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
         conn = psycopg2.connect(dsn)
         log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-        drop_results_table(conn)
+        # drop_results_table(conn,companycode)
 
-    except:
-        print(logfilename,"I am unable to connect to the database\n")
-        log_entry(logfilename,"I am unable to connect to the database\n")
+    except Exception as e:
+        log_str = "I am unable to connect to the database ERR:101\n\n"+ str(e)
+        print(logfilename,log_str)
+        log_entry(logfilename,log_str)
 
     log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
     start_clock = datetime.datetime.now()

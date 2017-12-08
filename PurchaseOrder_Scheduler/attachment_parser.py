@@ -19,6 +19,7 @@ def log_entry(logfile, entry_text):
         fil.close()
     except Exception as e:
         raise
+        
 def add_check_digit(upc_str):
 
     upc_str = str(upc_str)
@@ -70,22 +71,20 @@ check_table_query = "select * from information_schema.tables where table_name = 
 # print(check_table_query)
 cur.execute(check_table_query)
 num_tables = cur.fetchone()
-print(num_tables)
+# print(num_tables)
 
 if num_tables == None:
     create_table_sql = """
-        -- Table: public.sodanca_estoque_pulmao
-
-        DROP TABLE IF EXISTS public.sodanca_estoque_pulmao;
 
         CREATE TABLE public.sodanca_estoque_pulmao
         (
-            -- id integer NOT NULL DEFAULT nextval('sodanca_estoque_pulmao_id_seq'::regclass),
+            id serial NOT NULL,
             email_date date NOT NULL,
             product_id integer NOT NULL,
             product_name character varying(64) COLLATE pg_catalog."default",
-            quantity numeric --,
-            --CONSTRAINT sodanca_estoque_pulmao_pkey PRIMARY KEY (id)
+            quantity numeric,
+            quantity_available numeric,
+            CONSTRAINT sodanca_estoque_pulmao_pkey PRIMARY KEY (id)
         )
         WITH (
             OIDS = FALSE

@@ -2,6 +2,8 @@ import poplib
 import email
 import os
 import datetime
+import configparser
+import re
 
 class GmailTest(object):
     def __init__(self):
@@ -9,13 +11,29 @@ class GmailTest(object):
 
     def test_save_attach(self):
 
-        login = 'estoquepulmao@sodanca.com'
-        password = 'HFZNxaqqs\mq]_YfE9'
+        config = configparser.ConfigParser()
+        config.sections()
+        config.read('config.ini')
 
-        file_list = ['BA.csv', 'JAZZ.csv', 'SD.csv', 'ZAPATO.csv', 'CONF.csv']
+        login = config['DEFAULT']['email_login']
+        # login = 'estoquepulmao@sodanca.com'
+        password = config['DEFAULT']['email_password']
+        # password = 'HFZNxaqqs\mq]_YfE9'
+        email_server = config['DEFAULT']['email_pop3_server']
+        # email_server = 'pop.gmail.com'
+        email_port = int(config['DEFAULT']['email_port'])
+        # email_port = 995
+        print('DEBUG login info', login,password, email_server, email_port)
 
-        self.connection = poplib.POP3_SSL('pop.gmail.com', 995)
-        self.connection.set_debuglevel(0)
+
+        # file_list = ['BA.csv', 'JAZZ.csv', 'SD.csv', 'ZAPATO.csv', 'CONF.csv']
+        file_list = config['DEFAULT']['email_file_attch_list'].split(',')
+        for fn in file_list:
+            fn.strip()
+        print('DEBUG file_list',file_list)
+
+        self.connection = poplib.POP3_SSL(email_server, email_port)
+        self.connection.set_debuglevel(4)
         self.connection.user(login)
         self.connection.pass_(password)
 
@@ -25,8 +43,6 @@ class GmailTest(object):
         msg_list = self.connection.list()
         # print(msg_list)
 
-        goodsubj=''
-        goodemail=''
         prev_date = datetime.datetime.strptime('1970-01-01 00:00:00 -0400','%Y-%m-%d %H:%M:%S %z')
         # messages processing
         for i in range(emails):
@@ -39,7 +55,6 @@ class GmailTest(object):
             fromstr = str_message['from']
             subjstr = str_message['subject']
             # print('DEBUG fromstr, subjstr', fromstr, subjstr)
-            # Mon, 4 Dec 2017 16:58:51 -0400
 
             email_date = datetime.datetime.strptime(str_message['date'],'%a, %d %b %Y  %H:%M:%S %z')
             # print(i,'DEBUG EMAIL DATE {0}, PREV DATE {1}, FROM {2}, SUBJ "{3}"'.format(email_date, prev_date, fromstr, subjstr))
@@ -47,10 +62,9 @@ class GmailTest(object):
             # print ('DEBUG CONDITION CHECK 2 from',fromstr == '<anyi@solesdelmar.com>')
             # print ('DEBUG CONDITION CHECK 3 date',prev_date < email_date)
 
-
-            if fromstr[-17:] == '@solesdelmar.com>' and prev_date <= email_date:
-                # goodemail = fromstr
-                # goodsubj = subjstr
+            # print('DEBUG CONDITION CHECK domain {0}, seach str {1}, compare str {2}'.format(re.search("@[\w.]+", fromstr) == config['DEFAULT']['source_email_domain'], re.search("@[\w.]+", fromstr), config['DEFAULT']['source_email_domain']))
+            if re.search("@[\w.]+", fromstr) == config['DEFAULT']['source_email_domain'] and prev_date <= email_date:
+            # if fromstr[-17:] == '@solesdelmar.com>' and prev_date <= email_date:
                 # print('\n\nDEBUG prev_date, email_date', prev_date, email_date)
                 # print('DEBUG IF CHECK',prev_date < email_date)
                 # if prev_date < email_date:
@@ -86,6 +100,8 @@ class GmailTest(object):
         self.connection.quit()
         import sys
         sys.exit(0)
+
+
 
 d=GmailTest()
 d.test_save_attach()
