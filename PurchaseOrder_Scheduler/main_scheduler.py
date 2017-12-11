@@ -929,7 +929,7 @@ def create_hotstock_order(conn, companycode):
                 log_entry(logfilename, log_str)
 
             try:
-                update_query = """UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES ({0},{1}) WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+                update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
                 print('DEBUG update 1', update_query)
                 cur2 = conn.cursor()
                 cur2.execute(update_query)
@@ -944,7 +944,7 @@ def create_hotstock_order(conn, companycode):
                 log_entry(logfilename, log_str)
 
             try:
-                update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available ={0} WHERE id = {1}""".format(0,ep_lin_id)
+                update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available = {0} WHERE id = {1}""".format(0,ep_lin_id)
                 print('DEBUG update 2', update_query)
                 cur2 = conn.cursor()
                 cur2.execute(update_query)
@@ -1009,9 +1009,10 @@ def create_hotstock_order(conn, companycode):
                 log_str = "Error updating orders with hot stock quantities. ERR:105 {0}\n\n{1}".format(now, str(e))
                 print(log_str)
                 log_entry(logfilename, log_str)
+                raise
 
             try:
-                update_query = """UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES ({0},{1}) WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+                update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
                 print('DEBUG update 1', update_query)
                 cur2 = conn.cursor()
                 cur2.execute(update_query)
@@ -1024,6 +1025,7 @@ def create_hotstock_order(conn, companycode):
                 log_str = "Error updating orders with hot stock quantities. ERR:106 {0}\n\n{1}".format(now, str(e))
                 print(log_str)
                 log_entry(logfilename, log_str)
+                raise
 
             try:
                 update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available ={0} WHERE id = {1}""".format(0,ep_lin_id)
@@ -1038,6 +1040,7 @@ def create_hotstock_order(conn, companycode):
                 log_str = "Error updating orders with hot stock quantities. ERR:107 {0}\n\n{1}".format(now, str(e))
                 print(log_str)
                 log_entry(logfilename, log_str)
+                raise
 
     cur.close()
 

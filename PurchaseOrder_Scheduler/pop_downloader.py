@@ -4,6 +4,7 @@ import os
 import datetime
 import configparser
 import re
+import subprocess
 
 class GmailTest(object):
     def __init__(self):
@@ -23,17 +24,23 @@ class GmailTest(object):
         # email_server = 'pop.gmail.com'
         email_port = int(config['DEFAULT']['email_port'])
         # email_port = 995
-        print('DEBUG login info', login,password, email_server, email_port)
+        # print('DEBUG login info', login,password, email_server, email_port)
 
+        # Clearing attachments folder
+        try:
+            print(subprocess.check_output(['rm attachments/*']))
+        except Exception as e:
+            print(str(e))
+            pass
 
         # file_list = ['BA.csv', 'JAZZ.csv', 'SD.csv', 'ZAPATO.csv', 'CONF.csv']
         file_list = config['DEFAULT']['email_file_attch_list'].split(',')
         for fn in file_list:
             fn.strip()
-        print('DEBUG file_list',file_list)
+        # print('DEBUG file_list',file_list)
 
         self.connection = poplib.POP3_SSL(email_server, email_port)
-        self.connection.set_debuglevel(4)
+        self.connection.set_debuglevel(1)
         self.connection.user(login)
         self.connection.pass_(password)
 
@@ -41,14 +48,14 @@ class GmailTest(object):
         print("{0} emails in the inbox, {1} bytes total".format(emails, total_bytes))
         # return in format: (response, ['mesg_num octets', ...], octets)
         msg_list = self.connection.list()
-        # print(msg_list)
-
+        print('DEBUG msg_list',msg_list)
+        num_messages = len(msg_list[1])
         prev_date = datetime.datetime.strptime('1970-01-01 00:00:00 -0400','%Y-%m-%d %H:%M:%S %z')
         # messages processing
-        for i in range(emails):
-
+        for i in range(1,num_messages):
+            print('DEBUG i',i)
             # return in format: (response, ['line', ...], octets)
-            response = self.connection.retr(i+1)
+            response = self.connection.retr(i)
             raw_message = response[1]
 
             str_message = email.message_from_bytes(b'\n'.join(raw_message))
@@ -63,14 +70,15 @@ class GmailTest(object):
             # print ('DEBUG CONDITION CHECK 3 date',prev_date < email_date)
 
             # print('DEBUG CONDITION CHECK domain {0}, seach str {1}, compare str {2}'.format(re.search("@[\w.]+", fromstr) == config['DEFAULT']['source_email_domain'], re.search("@[\w.]+", fromstr), config['DEFAULT']['source_email_domain']))
+            # try:
             if re.search("@[\w.]+", fromstr) == config['DEFAULT']['source_email_domain'] and prev_date <= email_date:
-            # if fromstr[-17:] == '@solesdelmar.com>' and prev_date <= email_date:
-                # print('\n\nDEBUG prev_date, email_date', prev_date, email_date)
-                # print('DEBUG IF CHECK',prev_date < email_date)
-                # if prev_date < email_date:
-                #     print('DEBUG IF')
+                # if fromstr[-17:] == '@solesdelmar.com>' and prev_date <= email_date:
+                    # print('\n\nDEBUG prev_date, email_date', prev_date, email_date)
+                    # print('DEBUG IF CHECK',prev_date < email_date)
+                    # if prev_date < email_date:
+                    #     print('DEBUG IF')
 
-                # save attach
+                    # save attach
 
                 for part in str_message.walk():
                     print(part.get_content_type())
@@ -95,7 +103,14 @@ class GmailTest(object):
 
                 else:
                     # print('ELSE')
+
                     pass
+            # self.connection.dele(i+1)
+            # except Exception as e:
+            #     log_str('Could not process email')
+            #     print(log_str)
+            #     raise
+
         #I  exit here instead of pop3lib quit to make sure the message doesn't get removed in gmail
         self.connection.quit()
         import sys
