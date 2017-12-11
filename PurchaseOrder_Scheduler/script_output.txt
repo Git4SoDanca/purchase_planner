@@ -1,2 +1,0 @@
-[]
-Cannot clear sodanca_purchase_plan. ERR:000

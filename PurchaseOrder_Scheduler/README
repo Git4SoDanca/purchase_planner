@@ -1,0 +1,13 @@
+So Danca Purchase Planner
+
+Use -i for interactive mode and follow steps on screen.
+
+For hands of processing use ""./main_scheduler.py [companycode]" to run on
+default settings.
+
+Company codes can be listed using interactive mode.
+Company codes can be found and defined on config.ini file. The list of companies
+is populated automatically from the config file.
+
+Use interactive (-i) mode to install or update required database functions and
+tables on the database.

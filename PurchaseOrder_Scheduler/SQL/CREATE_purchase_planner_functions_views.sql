@@ -8,10 +8,6 @@ const AS (
 select 	.22 as grade_a_margin,
     	.40 as grade_b_margin,
     	.70 as grade_c_margin,
-    	9 as lead_time_a,
-    	9 as lead_time_b,
-    	5 as lead_time_c,
-		  5 as lead_time_d,
     	2 as min_inv_time_a,
     	3 as max_inv_time_a,
     	4 as min_inv_time_b,
@@ -20,11 +16,7 @@ select 	.22 as grade_a_margin,
     	12 as max_inv_time_c,
     	0 as min_inv_time_d,
     	0 as max_inv_time_d,
-		100 as box_ba_reg,
-    	80 as box_ba_larg,
-    	36 as box_jz_reg,
-      24 as box_jz_larg,
-    	12 as box_ch,
+
     	10 as mod_ba,
     	4 as mod_jz,
     	4 as mod_ch,
@@ -128,13 +120,7 @@ inventory_grade AS (
         WHEN category_id = ANY (const.categ_ch) THEN mod_ch
         ELSE 1
 
-    END AS order_mod,
-    CASE
-        WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC) <= const.grade_a_margin THEN const.lead_time_a -- 'A'
-        WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC) <= const.grade_b_margin THEN const.lead_time_b -- 'B'
-        WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC) <= const.grade_c_margin THEN const.lead_time_c -- 'C'
-        ELSE const.lead_time_d -- 'D'
-    END AS lead_time
+    END AS order_mod
     FROM sodanca_inventory_status_last12, const
     ORDER BY category, name_template, total_sold DESC, sodanca_inventory_status_last12.name, rank_qty_sold
 
@@ -210,7 +196,6 @@ DROP TABLE IF EXISTS public.sodanca_purchase_plan;
       expected_on_hand numeric,
       qty_on_hand numeric,
       sales_trend numeric,
-      --box_capacity integer,
       CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
   )
   WITH (
