@@ -319,23 +319,23 @@ def create_tables(conn, companycode):
     (
     WITH
     const AS (
-    select 	{grade_a_margin} as grade_a_margin,
-        	{grade_b_margin} as grade_b_margin,
-        	{grade_c_margin} as grade_c_margin,
-        	{min_inv_time_a} as min_inv_time_a,
-        	{max_inv_time_a} as max_inv_time_a,
-        	{min_inv_time_b} as min_inv_time_b,
-        	{max_inv_time_b} as max_inv_time_b,
-        	{min_inv_time_c} as min_inv_time_c,
-        	{max_inv_time_c} as max_inv_time_c,
-        	{min_inv_time_d} as min_inv_time_d,
-        	{max_inv_time_d} as max_inv_time_d,
-        	{mod_ba} as mod_ba,
-        	{mod_jz} as mod_jz,
-        	{mod_ch} as mod_ch,
-        	array[{categ_ba}] as categ_ba,
-        	array[{categ_ch}] as categ_ch,
-        	array[{categ_jz}] as categ_jz
+    select     {grade_a_margin} as grade_a_margin,
+            {grade_b_margin} as grade_b_margin,
+            {grade_c_margin} as grade_c_margin,
+            {min_inv_time_a} as min_inv_time_a,
+            {max_inv_time_a} as max_inv_time_a,
+            {min_inv_time_b} as min_inv_time_b,
+            {max_inv_time_b} as max_inv_time_b,
+            {min_inv_time_c} as min_inv_time_c,
+            {max_inv_time_c} as max_inv_time_c,
+            {min_inv_time_d} as min_inv_time_d,
+            {max_inv_time_d} as max_inv_time_d,
+            {mod_ba} as mod_ba,
+            {mod_jz} as mod_jz,
+            {mod_ch} as mod_ch,
+            array[{categ_ba}] as categ_ba,
+            array[{categ_ch}] as categ_ch,
+            array[{categ_jz}] as categ_jz
 
     )
     , sodanca_inventory_status_last12 AS (
@@ -344,15 +344,15 @@ def create_tables(conn, companycode):
         product_product.name, product_product.id as product_id,
         CASE
             WHEN product_template.categ_id = {categ_tights} -- Tights
-            	THEN 'Tights'
-        	WHEN product_template.categ_id IN (SELECT id from product_category where parent_id in ({categ_shoes})) -- Child of Shoes
-            	THEN 'Shoes'
+                THEN 'Tights'
+            WHEN product_template.categ_id IN (SELECT id from product_category where parent_id in ({categ_shoes})) -- Child of Shoes
+                THEN 'Shoes'
             WHEN product_template.categ_id IN (SELECT id from product_category where parent_id in ({categ_dwear})) -- Child of Dancewear
-            	THEN 'Dancewear'
+                THEN 'Dancewear'
             WHEN product_template.categ_id = {categ_dwear} -- Dancewear
-            	THEN 'Dancewear'
+                THEN 'Dancewear'
             ELSE
-            	'Others'
+                'Others'
         END AS category,
         product_template.categ_id AS category_id,
         product_template.list_price AS sale_price,
@@ -397,8 +397,8 @@ def create_tables(conn, companycode):
                 WHEN sold.product_sale_total IS NOT NULL THEN sold.product_sale_total
                 ELSE 0::numeric
             END) DESC,
-       		product_product.name_template, product_product.name
-    	),
+               product_product.name_template, product_product.name
+        ),
     inventory_grade AS (
         SELECT sodanca_inventory_status_last12.*, sodanca_inventory_status_last12.weekly_average AS prod_weekly_average, (PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC))*100 as rank_qty_sold, (PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC))*100 as rank_gr_profit
         ,
@@ -537,9 +537,9 @@ def create_functions(conn,companycode):
     functions_query = """
         -- Quantity Committed
         CREATE OR REPLACE FUNCTION public.sd_qcomm(
-        	pid integer,
+            pid integer,
             start_date date,
-        	end_date date)
+            end_date date)
             RETURNS numeric
             LANGUAGE 'sql'
 
@@ -550,7 +550,7 @@ def create_functions(conn,companycode):
         SELECT sum(stock_move.product_qty) AS product_committed_total
         FROM stock_move
         WHERE
-        	stock_move.location_dest_id = {customers}
+            stock_move.location_dest_id = {customers}
             AND stock_move.location_id = {wh_stock}
             AND (stock_move.state::text = ANY (ARRAY['confirmed'::character varying, 'assigned'::character varying]::text[]))
             AND date_expected >= $2
@@ -565,9 +565,9 @@ def create_functions(conn,companycode):
 
         -- Quantity on order
         CREATE OR REPLACE FUNCTION public.sd_qoo(
-        	pid integer,
-        	start_date date,
-        	end_date date)
+            pid integer,
+            start_date date,
+            end_date date)
             RETURNS decimal
             LANGUAGE 'sql'
 
@@ -578,7 +578,7 @@ def create_functions(conn,companycode):
         SELECT sum(stock_move.product_qty) AS on_order_total
         FROM stock_move
         WHERE
-        	stock_move.location_dest_id = {wh_stock}
+            stock_move.location_dest_id = {wh_stock}
             AND stock_move.location_id = {supplier}
             AND (stock_move.state::text = ANY (ARRAY['confirmed'::character varying, 'assigned'::character varying]::text[]))
             AND date_expected >= $2 --now()::date
@@ -593,9 +593,9 @@ def create_functions(conn,companycode):
 
         -- Quantity Sold
         CREATE OR REPLACE FUNCTION public.sd_qs(
-        	pid integer,
-        	start_date date,
-        	end_date date)
+            pid integer,
+            start_date date,
+            end_date date)
             RETURNS numeric
             LANGUAGE 'sql'
 
@@ -604,11 +604,11 @@ def create_functions(conn,companycode):
         AS $BODY$
 
         SELECT
-        	CASE
-            	WHEN sum(stock_move.product_qty) != 0 THEN sum(stock_move.product_qty) ELSE 0 END AS on_order_total
+            CASE
+                WHEN sum(stock_move.product_qty) != 0 THEN sum(stock_move.product_qty) ELSE 0 END AS on_order_total
         FROM stock_move
         WHERE
-        	stock_move.location_dest_id = {customers}
+            stock_move.location_dest_id = {customers}
             AND stock_move.location_id = {wh_stock}
             AND (stock_move.state::text = 'done'::character varying)
             AND date_expected >= $2 --start_date
@@ -665,9 +665,9 @@ def create_functions(conn,companycode):
 
         -- Quantity to order - Purchase planner
         CREATE OR REPLACE FUNCTION public.sd_quantity_to_order(
-        	pid integer,
-        	start_date date,
-        	end_date date)
+            pid integer,
+            start_date date,
+            end_date date)
             RETURNS numeric
             LANGUAGE 'sql'
 
