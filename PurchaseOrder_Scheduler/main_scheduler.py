@@ -1,4 +1,4 @@
-#!/home/fsoares/purchase_planner/PurchaseOrder_Scheduler/bin/python
+#!/opt/purchase_planner/PurchaseOrder_Scheduler/bin/python
 #
 # Script to create purchase_planner table
 #
