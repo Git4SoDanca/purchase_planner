@@ -857,7 +857,7 @@ def next_shipping_date():
 def create_hotstock_order(conn, companycode):
 
     parse_attachments(conn,companycode)
-    # print('DEBUG create_hotstock_order called')
+    # print('create_hotstock_order called')
     hotstock_query = """SELECT sodanca_estoque_pulmao.* , sodanca_purchase_plan.id as PP_id, sodanca_purchase_plan.qty_2_ord as PP_q2o,
         sodanca_purchase_plan.qty_2_ord_adj as PP_q2oAdj, sodanca_purchase_plan.*
         FROM sodanca_estoque_pulmao LEFT JOIN sodanca_purchase_plan ON sodanca_estoque_pulmao.product_id = sodanca_purchase_plan.product_id
@@ -1153,11 +1153,11 @@ def run_all(conn , companycode):
 
     try:
         create_order(conn, 'R', 'A', plan_period_a, companycode)
-        # create_order(conn, 'R', 'B', plan_period_b, companycode)
-        # create_order(conn, 'N', 'A', plan_period_a, companycode)
-        # create_order(conn, 'N', 'B', plan_period_b, companycode)
-        # create_order(conn, 'R', 'C', plan_period_c, companycode)
-        # create_order(conn, 'R', 'D', plan_period_d, companycode)
+        create_order(conn, 'R', 'B', plan_period_b, companycode)
+        create_order(conn, 'N', 'A', plan_period_a, companycode)
+        create_order(conn, 'N', 'B', plan_period_b, companycode)
+        create_order(conn, 'R', 'C', plan_period_c, companycode)
+        create_order(conn, 'R', 'D', plan_period_d, companycode)
 
         create_hotstock_order(conn, companycode)
 
@@ -1220,7 +1220,7 @@ def manual_run():
         dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
         conn = psycopg2.connect(dsn)
         log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-        drop_results_table(conn)
+        drop_results_table(conn, companycode)
 
 
     except Exception as e:
