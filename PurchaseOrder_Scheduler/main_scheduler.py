@@ -1520,8 +1520,8 @@ def main(companycode):
 
 	try:
 		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
-		conn.set_session(autocommit=True)
 		conn = psycopg2.connect(dsn)
+		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 		# drop_results_table(conn,companycode)
 
