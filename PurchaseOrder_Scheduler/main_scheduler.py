@@ -87,7 +87,6 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		try:
 			cur.execute(vendor_list_query)
 			vendors = cur.fetchall()
-			cur.close()
 
 		except Exception:
 			log_entry(logfilename,"I can't SELECT from res_partner. ERR:001\n")
