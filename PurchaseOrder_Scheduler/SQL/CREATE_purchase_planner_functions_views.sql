@@ -123,90 +123,89 @@ inventory_grade AS (
     END AS order_mod
     FROM sodanca_inventory_status_last12, const
     ORDER BY category, name_template, total_sold DESC, sodanca_inventory_status_last12.name, rank_qty_sold
-
 )
 
 
- --(product_id, grade, min_stock, max_stock, order_mod, box_size, lead_time)
-SELECT id, inventory_grade.prod_weekly_average,
-CASE
-    WHEN inventory_grade.grade_profit IS NOT NULL
-    THEN inventory_grade.grade_profit
-    ELSE 'D'
-END AS grade,
-CASE
-    WHEN inventory_grade.adjusted_minimum_stock IS NOT NULL
-    THEN inventory_grade.adjusted_minimum_stock
-    ELSE 0.0
-END AS min_stock,
-CASE
-    WHEN inventory_grade.adjusted_maximum_stock IS NOT NULL
-    THEN inventory_grade.adjusted_maximum_stock
-    ELSE 0.0
-END AS max_stock,
-    CASE
-    WHEN inventory_grade.order_mod IS NOT NULL
-    THEN inventory_grade.order_mod
-    ELSE 1
-END AS order_mod,
-    CASE
-    WHEN inventory_grade.lead_time IS NOT NULL
-    THEN inventory_grade.lead_time
-    ELSE 5
-END AS lead_time
-FROM product_product
-LEFT JOIN inventory_grade ON inventory_grade.product_id = product_product.id
-WHERE
-    product_product.procure_method = 'make_to_stock'
-    AND product_product.discontinued_product = false
-    AND product_product.active = true
-
-);
-ALTER TABLE public.sodanca_stock_control
-    OWNER to sodanca;
+--  --(product_id, grade, min_stock, max_stock, order_mod, box_size, lead_time)
+-- SELECT id, inventory_grade.prod_weekly_average,
+-- CASE
+--     WHEN inventory_grade.grade_profit IS NOT NULL
+--     THEN inventory_grade.grade_profit
+--     ELSE 'D'
+-- END AS grade,
+-- CASE
+--     WHEN inventory_grade.adjusted_minimum_stock IS NOT NULL
+--     THEN inventory_grade.adjusted_minimum_stock
+--     ELSE 0.0
+-- END AS min_stock,
+-- CASE
+--     WHEN inventory_grade.adjusted_maximum_stock IS NOT NULL
+--     THEN inventory_grade.adjusted_maximum_stock
+--     ELSE 0.0
+-- END AS max_stock,
+--     CASE
+--     WHEN inventory_grade.order_mod IS NOT NULL
+--     THEN inventory_grade.order_mod
+--     ELSE 1
+-- END AS order_mod,
+--     CASE
+--     WHEN inventory_grade.lead_time IS NOT NULL
+--     THEN inventory_grade.lead_time
+--     ELSE 5
+-- END AS lead_time
+-- FROM product_product
+-- LEFT JOIN inventory_grade ON inventory_grade.product_id = product_product.id
+-- WHERE
+--     product_product.procure_method = 'make_to_stock'
+--     AND product_product.discontinued_product = false
+--     AND product_product.active = true
+--
+-- );
+-- ALTER TABLE public.sodanca_stock_control
+--     OWNER TO purchase_planner;
 
 -- Update grades on product_product table
-UPDATE product_product SET grade = sodanca_stock_control.grade FROM sodanca_stock_control
-WHERE product_product.id = sodanca_stock_control.id;
+-- UPDATE product_product SET grade = sodanca_stock_control.grade FROM sodanca_stock_control
+-- WHERE product_product.id = sodanca_stock_control.id;
 
 -- Create purchase plan table to be used by POG
-DROP TABLE IF EXISTS public.sodanca_purchase_plan;
-
-  CREATE TABLE public.sodanca_purchase_plan
-  (
-      id SERIAL,
-      type character(1) COLLATE pg_catalog."default" NOT NULL,
-      vendor integer NOT NULL,
-      vendor_group integer,
-      creation_date date NOT NULL,
-      expected_date date NOT NULL,
-      template_id integer NOT NULL,
-      template_name varchar(64),
-      product_id integer NOT NULL,
-      product_name varchar(64),
-      product_category_id integer,
-      product_grade character(1) COLLATE pg_catalog."default",
-      order_mod smallint,
-      qty_2_ord numeric NOT NULL,
-      qty_2_ord_adj numeric NOT NULL,
-      qty_on_order numeric,
-      qty_on_order_period numeric,
-      qty_committed numeric,
-      qty_sold numeric,
-      expected_on_hand numeric,
-      qty_on_hand numeric,
-      sales_trend numeric,
-      CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
-  )
-  WITH (
-      OIDS = FALSE
-  )
-  TABLESPACE pg_default;
-
-  ALTER TABLE public.sodanca_purchase_plan
-      OWNER to sodanca;
-  COMMENT ON TABLE public.sodanca_purchase_plan
-      IS 'Reset nightly, used by stock purchase planner';
+-- DROP TABLE IF EXISTS public.sodanca_purchase_plan;
+--
+--   CREATE TABLE public.sodanca_purchase_plan
+--   (
+--       id SERIAL,
+--       type character(1) COLLATE pg_catalog."default" NOT NULL,
+--       vendor integer NOT NULL,
+--       vendor_group integer,
+--       creation_date date NOT NULL,
+--       expected_date date NOT NULL,
+--       template_id integer NOT NULL,
+--       template_name varchar(64),
+--       product_id integer NOT NULL,
+--       product_name varchar(64),
+--       product_category_id integer,
+--       product_grade character(1) COLLATE pg_catalog."default",
+--       order_mod smallint,
+--       qty_2_ord numeric NOT NULL,
+--       qty_2_ord_adj numeric NOT NULL,
+--       qty_on_order numeric,
+--       qty_on_order_period numeric,
+--       qty_committed numeric,
+--       qty_sold numeric,
+--       expected_on_hand numeric,
+--       qty_on_hand numeric,
+--       sales_trend numeric,
+--       CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
+--   )
+--   WITH (
+--       OIDS = FALSE
+--   )
+--   TABLESPACE pg_default;
+--
+--   ALTER TABLE public.sodanca_purchase_plan
+--       OWNER TO purchase_planner;
+--   COMMENT ON TABLE public.sodanca_purchase_plan
+--       IS 'Reset nightly, used by stock purchase planner';
 
 --SELECT * FROM product_product WHERE id NOT IN (select product_id FROM sodanca_stock_control ) AND active = true AND procure_method = 'make_to_stock' and discontinued_product = false AND grade is  null order by name_template, default_code
 
@@ -240,7 +239,7 @@ GROUP BY stock_move.product_id
 $BODY$;
 
 ALTER FUNCTION public.sd_qcomm(integer, date, date)
-    OWNER TO sodanca;
+    OWNER TO purchase_planner;
 
 -- Quantity on order
 CREATE OR REPLACE FUNCTION public.sd_qoo(
@@ -268,7 +267,7 @@ GROUP BY stock_move.product_id
 $BODY$;
 
 ALTER FUNCTION public.sd_qoo(integer, date, date)
-    OWNER TO sodanca;
+    OWNER TO purchase_planner;
 
 -- Quantity Sold
 CREATE OR REPLACE FUNCTION public.sd_qs(
@@ -298,7 +297,7 @@ GROUP BY stock_move.product_id
 $BODY$;
 
 ALTER FUNCTION public.sd_qs(integer, date, date)
-    OWNER TO sodanca;
+    OWNER TO purchase_planner;
 
 -- Quantity on hand
 CREATE OR REPLACE FUNCTION sd_qoh(pid int) RETURNS decimal AS
@@ -334,7 +333,7 @@ SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'6 months'::interval)::date,$2),0)-
 $BODY$;
 
 
-ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO sodanca;
+ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO purchase_planner;
 
 -- Sales trend
 CREATE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
@@ -360,4 +359,4 @@ SELECT GREATEST(sd_qs($1,$2,$3),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)
 $BODY$;
 
 ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
-    OWNER TO sodanca;
+    OWNER TO purchase_planner;
