@@ -132,7 +132,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		# print(subvendor[0])
 
 		#TODO vendor_cost
-		product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, 'vendor_cost from purchase list' AS vendor_cost, categ_id, product_product.name as product_name,
+		product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, 999.99 AS vendor_cost, categ_id, product_product.name as product_name,
 			  product_product.id, sodanca_stock_control.grade,
 			  sodanca_stock_control.min_stock, sodanca_stock_control.max_stock, sodanca_stock_control.order_mod, sodanca_stock_control.lead_time
 		FROM product_supplierinfo
@@ -205,7 +205,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				if product_qto[0][0] > 0: ### Production
 				# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
-					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qhs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
+					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
 					#Still missing box_capacity which should come here maybe as a function or a query
 					# print(prod_details_query)
 					try:
@@ -231,12 +231,14 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					# qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
 					# print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
 
-					insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id, product_grade, order_mod, qty_2_ord,
-					qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
-					'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0],
-						qto_rounded, prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
+					insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
+					product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
+					expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
+					'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date,
+					product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1],
+					prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
 
-					# print(insert_query)
+					print(insert_query)
 
 					try:
 						cur2.execute(insert_query)
@@ -1224,6 +1226,7 @@ def manual_run():
 	try:
 		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
 		conn = psycopg2.connect(dsn)
+		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 		drop_results_table(conn, companycode)
 
