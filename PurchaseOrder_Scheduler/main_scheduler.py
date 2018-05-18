@@ -83,7 +83,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 	for vendor_parent in config[companycode]['vendor_id_list'].split(","):#vendor_id_list:
 		vendor_list_query = "SELECT id FROM res_partner WHERE parent_id = {0} and supplier = true".format(int(vendor_parent))
-
+		print(vendor_list_query)
 		try:
 			cur.execute(vendor_list_query)
 			vendors = cur.fetchall()
@@ -299,11 +299,11 @@ def drop_results_table(conn, companycode):
 	TABLESPACE pg_default;
 
 	ALTER TABLE public.sodanca_purchase_plan
-		OWNER to sodanca;
+		OWNER to {login};
 	COMMENT ON TABLE public.sodanca_purchase_plan
 		IS 'Reset nightly, used by stock purchase planner';
 
-	"""
+	""".format(login = config[companycode]['login'])
 	try:
 		cur.execute(clear_table_query)
 		conn.commit()
@@ -474,7 +474,7 @@ def create_tables(conn, companycode):
 
 	);
 	ALTER TABLE public.sodanca_stock_control
-		OWNER to sodanca;
+		OWNER to {login};
 
 	-- Update grades on product_product table
 	UPDATE product_product SET grade = sodanca_stock_control.grade FROM sodanca_stock_control
@@ -517,13 +517,13 @@ def create_tables(conn, companycode):
 	  TABLESPACE pg_default;
 
 	  ALTER TABLE public.sodanca_purchase_plan
-		  OWNER to sodanca;
+		  OWNER to {login};
 	  COMMENT ON TABLE public.sodanca_purchase_plan
 		  IS 'Reset nightly, used by stock purchase planner';""".format(grade_a_margin = config[companycode]['grade_a_margin'], grade_b_margin = config[companycode]['grade_b_margin'], grade_c_margin = config[companycode]['grade_c_margin'],
 		  min_inv_time_a = config[companycode]['min_inv_time_a'], max_inv_time_a = config[companycode]['max_inv_time_a'],min_inv_time_b = config[companycode]['min_inv_time_b'], max_inv_time_b = config[companycode]['max_inv_time_b'],
 		  min_inv_time_c = config[companycode]['min_inv_time_c'], max_inv_time_c = config[companycode]['max_inv_time_c'],min_inv_time_d = config[companycode]['min_inv_time_d'], max_inv_time_d = config[companycode]['max_inv_time_d'],
 		  categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'],
-		  categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'])
+		  categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'], login=config[companycode]['login'])
 
 	logfilename = config[companycode]['logfilename']
 	try:
@@ -565,7 +565,7 @@ def create_functions(conn,companycode):
 		$BODY$;
 
 		ALTER FUNCTION public.sd_qcomm(integer, date, date)
-			OWNER TO sodanca;
+			OWNER TO {login};
 
 		-- Quantity on order
 		CREATE OR REPLACE FUNCTION public.sd_qoo(
@@ -593,7 +593,7 @@ def create_functions(conn,companycode):
 		$BODY$;
 
 		ALTER FUNCTION public.sd_qoo(integer, date, date)
-			OWNER TO sodanca;
+			OWNER TO {login};
 
 		-- Quantity Sold
 		CREATE OR REPLACE FUNCTION public.sd_qs(
@@ -623,7 +623,7 @@ def create_functions(conn,companycode):
 		$BODY$;
 
 		ALTER FUNCTION public.sd_qs(integer, date, date)
-			OWNER TO sodanca;
+			OWNER TO {login};
 
 		-- Quantity on hand
 		CREATE OR REPLACE FUNCTION sd_qoh(pid int) RETURNS decimal AS
@@ -659,7 +659,7 @@ def create_functions(conn,companycode):
 		$BODY$;
 
 
-		ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO sodanca;
+		ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO {login};
 
 		-- Sales trend
 		CREATE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
@@ -685,8 +685,8 @@ def create_functions(conn,companycode):
 		$BODY$;
 
 		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
-			OWNER TO sodanca;
-	""".format(wh_stock = 12, customers = 9, supplier = 8)
+			OWNER TO {login};
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
 	logfilename = config[companycode]['logfilename']
 	try:
@@ -752,8 +752,8 @@ def parse_attachments(conn, companycode):
 		TABLESPACE pg_default;
 
 		ALTER TABLE public.sodanca_pp_barcode_audit
-			OWNER to sodanca;
-	"""
+			OWNER to {login};
+	""".format(login = config[companycode]['login'])
 	try:
 		cur.execute(create_barcode_audit_query)
 	except Exception as e:
@@ -780,10 +780,10 @@ def parse_attachments(conn, companycode):
 			TABLESPACE pg_default;
 
 			ALTER TABLE public.sodanca_estoque_pulmao
-				OWNER to sodanca;
+				OWNER to {login};
 			COMMENT ON TABLE public.sodanca_estoque_pulmao
 				IS 'This is updated daily from the email sent from Soles, by default the data is cycled every 12 months, this can be adjusted on the config file';
-		"""
+		""".format(login = config[companycode]['login'])
 		try:
 			cur.execute(create_table_sql)
 			conn.commit()
