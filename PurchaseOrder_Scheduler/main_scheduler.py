@@ -939,7 +939,7 @@ def create_hotstock_order(conn, companycode):
 
 			try:
 				update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
-				print('DEBUG update 1', update_query)
+				# print('DEBUG update 1', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
 				conn.commit()
@@ -954,7 +954,7 @@ def create_hotstock_order(conn, companycode):
 
 			try:
 				update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available = {0} WHERE id = {1}""".format(0,ep_lin_id)
-				print('DEBUG update 2', update_query)
+				# print('DEBUG update 2', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
 				conn.commit()
@@ -1022,7 +1022,7 @@ def create_hotstock_order(conn, companycode):
 
 			try:
 				update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
-				print('DEBUG update 1', update_query)
+				# print('DEBUG update 1', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
 				conn.commit()
@@ -1038,7 +1038,7 @@ def create_hotstock_order(conn, companycode):
 
 			try:
 				update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available ={0} WHERE id = {1}""".format(0,ep_lin_id)
-				print('DEBUG update 2', update_query)
+				# print('DEBUG update 2', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
 				conn.commit()
@@ -1487,7 +1487,7 @@ def manual_run():
 			log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 			log_entry(config[companycode]['logfilename'],log_str)
 			print(log_str)
-			print(order_type)
+			# print(order_type)
 			create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
 			log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
@@ -1499,7 +1499,7 @@ def manual_run():
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			print(order_type)
+			# print(order_type)
 			print('Runtime: ',str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
@@ -1579,7 +1579,7 @@ def main(companycode):
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-		# drop_results_table(conn,companycode)
+		drop_results_table(conn,companycode)
 		log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 		start_clock = datetime.datetime.now()
 		log_entry(config[companycode]['logfilename'],log_str)
