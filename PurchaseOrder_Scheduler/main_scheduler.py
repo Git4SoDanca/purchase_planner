@@ -1580,20 +1580,22 @@ def main(companycode):
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 		# drop_results_table(conn,companycode)
+		log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+		start_clock = datetime.datetime.now()
+		log_entry(config[companycode]['logfilename'],log_str)
+		print(log_str)
+		run_all(conn, companycode)
+		print('Runtime: ',str(datetime.datetime.now()- start_clock))
+		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		log_entry(logfilename,"="*80+"\n")
+
 
 	except Exception as e:
 		log_str = "I am unable to connect to the database ERR:101\n\n"+ str(e)
 		print(logfilename,log_str)
 		log_entry(logfilename,log_str)
 
-	log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-	start_clock = datetime.datetime.now()
-	log_entry(config[companycode]['logfilename'],log_str)
-	print(log_str)
-	run_all(conn, companycode)
-	print('Runtime: ',str(datetime.datetime.now()- start_clock))
-	log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
-	log_entry(logfilename,"="*80+"\n")
+
 
 # fil.close()
 	# print(vendor_parent)
