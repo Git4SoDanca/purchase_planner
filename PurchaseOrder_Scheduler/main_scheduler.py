@@ -1482,12 +1482,12 @@ def manual_run():
 		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		# log_entry(logfilename,"="*80+"\n")
 
+		start_clock = datetime.datetime.now()
 		if order_type in ['R','N']:
 			log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-			start_clock = datetime.datetime.now()
 			log_entry(config[companycode]['logfilename'],log_str)
 			print(log_str)
-
+			print(ordert_type)
 			create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
 			log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
@@ -1499,6 +1499,7 @@ def manual_run():
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
+			print(ordert_type)
 			print('Runtime: ',str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
