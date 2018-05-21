@@ -1234,7 +1234,7 @@ def manual_run():
 
 
 	except Exception as e:
-		log_str = "I am unable to connect to the database ERR:100\n\n" + str(e)
+		log_str = "I am unable to connect to the database, check companycode ERR:100\n\n" + str(e)
 		print(logfilename,log_str)
 		log_entry(logfilename,log_str)
 
@@ -1512,6 +1512,57 @@ def manual_run():
 
 def install_update():
 	print('Install_update')
+	print('\nSelect company to to run:')
+
+	company_idx = []
+	for key in config:
+		company_idx.append(key)
+
+	for k in range(1, len(company_idx)):
+		print(k,'-',company_idx[k])
+
+	print('\nM - Main Menu')
+	print('Q - Quit')
+	while True:
+		choice = input(" >> ")
+		ch = choice.lower()
+
+		print(ch)
+		if ch == 'q':
+			print('Good bye!')
+			sys.exit(0)
+		elif ch == 'm':
+			raise
+			main_menu()
+			break
+		elif int(ch) in range(1,len(company_idx)):
+			companycode = company_idx[int(ch)]
+			break
+
+		else:
+			print('Not a valid option. Try again')
+
+	print('\nCompany selected - ',companycode,'\n')
+
+	dbname = config[companycode]['db_name']
+	db_server_address = config[companycode]['db_server_address']
+	login = config[companycode]['login']
+	passwd = config[companycode]['passwd']
+
+	logfilename = config[companycode]['logfilename']#'purchase_planner.log'
+
+	try:
+		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
+		conn = psycopg2.connect(dsn)
+		conn.set_session(autocommit=True)
+		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+		create_tables(conn, companycode)
+
+
+	except Exception as e:
+		log_str = "I am unable to connect to the database, check companycode ERR:111\n\n" + str(e)
+		print(logfilename,log_str)
+		log_entry(logfilename,log_str)
 
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
@@ -1571,7 +1622,7 @@ menu_actions = {
 # # Dynamically populating company list into sub-menu
 # key_idx = 1
 # for key in config:
-#     if key == 'DEFAULT':
+#    if key == 'DEFAULT':
 #         pass
 #     else:
 #         print (key_idx,'-',key)
