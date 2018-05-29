@@ -28,7 +28,8 @@ def roundup(x,y):
 
 def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 	sub_cur = conn.cursor()
-	schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date >= '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
+	schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
+	print(schedule_query)
 	logfilename = config[companycode]['logfilename']
 	try:
 		# print(schedule_query)
@@ -83,7 +84,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 	for vendor_parent in config[companycode]['vendor_id_list'].split(","):#vendor_id_list:
 		vendor_list_query = "SELECT id FROM res_partner WHERE parent_id = {0} and supplier = true".format(int(vendor_parent))
-		print(vendor_list_query)
+		# print(vendor_list_query)
 		try:
 			cur.execute(vendor_list_query)
 			vendors = cur.fetchall()
