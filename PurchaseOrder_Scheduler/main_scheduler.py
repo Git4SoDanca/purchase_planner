@@ -28,7 +28,8 @@ def roundup(x,y):
 
 def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 	sub_cur = conn.cursor()
-	schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date >= '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
+	schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
+	print(schedule_query)
 	logfilename = config[companycode]['logfilename']
 	try:
 		# print(schedule_query)
@@ -83,7 +84,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 	for vendor_parent in config[companycode]['vendor_id_list'].split(","):#vendor_id_list:
 		vendor_list_query = "SELECT id FROM res_partner WHERE parent_id = {0} and supplier = true".format(int(vendor_parent))
-		print(vendor_list_query)
+		# print(vendor_list_query)
 		try:
 			cur.execute(vendor_list_query)
 			vendors = cur.fetchall()
@@ -132,13 +133,15 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		# print(subvendor[0])
 
 		#TODO vendor_cost
-		product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, 'vendor_cost from purchase list' AS vendor_cost, categ_id, product_product.name as product_name,
+		product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
 			  product_product.id, sodanca_stock_control.grade,
 			  sodanca_stock_control.min_stock, sodanca_stock_control.max_stock, sodanca_stock_control.order_mod, sodanca_stock_control.lead_time
 		FROM product_supplierinfo
 		LEFT JOIN product_template ON product_template.id = product_supplierinfo.product_id
 		LEFT JOIN product_product ON product_supplierinfo.product_id = product_product.product_tmpl_id
 		LEFT JOIN sodanca_stock_control ON sodanca_stock_control.id = product_product.id
+		LEFT JOIN pricelist_partnerinfo ON pricelist_partnerinfo.suppinfo_id = product_supplierinfo.id
+		-- LEFT JOIN res_partner ON res_partner.id = product_supplierinfo.name
 		WHERE product_template.procure_method = 'make_to_stock'
 			AND product_template.purchase_ok = true
 			AND product_template.active = true
@@ -205,7 +208,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				if product_qto[0][0] > 0: ### Production
 				# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
-					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qhs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
+					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
 					#Still missing box_capacity which should come here maybe as a function or a query
 					# print(prod_details_query)
 					try:
@@ -231,12 +234,14 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					# qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
 					# print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
 
-					insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id, product_grade, order_mod, qty_2_ord,
-					qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
-					'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0],
-						qto_rounded, prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
+					insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
+					product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
+					expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
+					'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date,
+					product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1],
+					prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
 
-					# print(insert_query)
+					print(insert_query)
 
 					try:
 						cur2.execute(insert_query)
@@ -935,7 +940,7 @@ def create_hotstock_order(conn, companycode):
 
 			try:
 				update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
-				print('DEBUG update 1', update_query)
+				# print('DEBUG update 1', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
 				conn.commit()
@@ -950,7 +955,7 @@ def create_hotstock_order(conn, companycode):
 
 			try:
 				update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available = {0} WHERE id = {1}""".format(0,ep_lin_id)
-				print('DEBUG update 2', update_query)
+				# print('DEBUG update 2', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
 				conn.commit()
@@ -1018,7 +1023,7 @@ def create_hotstock_order(conn, companycode):
 
 			try:
 				update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
-				print('DEBUG update 1', update_query)
+				# print('DEBUG update 1', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
 				conn.commit()
@@ -1034,7 +1039,7 @@ def create_hotstock_order(conn, companycode):
 
 			try:
 				update_query = """UPDATE sodanca_estoque_pulmao SET quantity_available ={0} WHERE id = {1}""".format(0,ep_lin_id)
-				print('DEBUG update 2', update_query)
+				# print('DEBUG update 2', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
 				conn.commit()
@@ -1224,12 +1229,13 @@ def manual_run():
 	try:
 		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
 		conn = psycopg2.connect(dsn)
+		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 		drop_results_table(conn, companycode)
 
 
 	except Exception as e:
-		log_str = "I am unable to connect to the database ERR:100\n\n" + str(e)
+		log_str = "I am unable to connect to the database, check companycode ERR:100\n\n" + str(e)
 		print(logfilename,log_str)
 		log_entry(logfilename,log_str)
 
@@ -1477,12 +1483,12 @@ def manual_run():
 		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		# log_entry(logfilename,"="*80+"\n")
 
+		start_clock = datetime.datetime.now()
 		if order_type in ['R','N']:
 			log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-			start_clock = datetime.datetime.now()
 			log_entry(config[companycode]['logfilename'],log_str)
 			print(log_str)
-
+			# print(order_type)
 			create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
 			log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
@@ -1494,6 +1500,7 @@ def manual_run():
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
+			# print(order_type)
 			print('Runtime: ',str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
@@ -1506,6 +1513,57 @@ def manual_run():
 
 def install_update():
 	print('Install_update')
+	print('\nSelect company to to run:')
+
+	company_idx = []
+	for key in config:
+		company_idx.append(key)
+
+	for k in range(1, len(company_idx)):
+		print(k,'-',company_idx[k])
+
+	print('\nM - Main Menu')
+	print('Q - Quit')
+	while True:
+		choice = input(" >> ")
+		ch = choice.lower()
+
+		print(ch)
+		if ch == 'q':
+			print('Good bye!')
+			sys.exit(0)
+		elif ch == 'm':
+			raise
+			main_menu()
+			break
+		elif int(ch) in range(1,len(company_idx)):
+			companycode = company_idx[int(ch)]
+			break
+
+		else:
+			print('Not a valid option. Try again')
+
+	print('\nCompany selected - ',companycode,'\n')
+
+	dbname = config[companycode]['db_name']
+	db_server_address = config[companycode]['db_server_address']
+	login = config[companycode]['login']
+	passwd = config[companycode]['passwd']
+
+	logfilename = config[companycode]['logfilename']#'purchase_planner.log'
+
+	try:
+		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
+		conn = psycopg2.connect(dsn)
+		conn.set_session(autocommit=True)
+		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+		create_tables(conn, companycode)
+
+
+	except Exception as e:
+		log_str = "I am unable to connect to the database, check companycode ERR:111\n\n" + str(e)
+		print(logfilename,log_str)
+		log_entry(logfilename,log_str)
 
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
@@ -1522,21 +1580,23 @@ def main(companycode):
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-		# drop_results_table(conn,companycode)
+		drop_results_table(conn,companycode)
+		log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+		start_clock = datetime.datetime.now()
+		log_entry(config[companycode]['logfilename'],log_str)
+		print(log_str)
+		run_all(conn, companycode)
+		print('Runtime: ',str(datetime.datetime.now()- start_clock))
+		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		log_entry(logfilename,"="*80+"\n")
+
 
 	except Exception as e:
 		log_str = "I am unable to connect to the database ERR:101\n\n"+ str(e)
 		print(logfilename,log_str)
 		log_entry(logfilename,log_str)
 
-	log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-	start_clock = datetime.datetime.now()
-	log_entry(config[companycode]['logfilename'],log_str)
-	print(log_str)
-	run_all(conn, companycode)
-	print('Runtime: ',str(datetime.datetime.now()- start_clock))
-	log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
-	log_entry(logfilename,"="*80+"\n")
+
 
 # fil.close()
 	# print(vendor_parent)
@@ -1565,7 +1625,7 @@ menu_actions = {
 # # Dynamically populating company list into sub-menu
 # key_idx = 1
 # for key in config:
-#     if key == 'DEFAULT':
+#    if key == 'DEFAULT':
 #         pass
 #     else:
 #         print (key_idx,'-',key)
