@@ -132,7 +132,6 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 		# print(subvendor[0])
 
-		#TODO vendor_cost
 		product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
 			  product_product.id, sodanca_stock_control.grade,
 			  sodanca_stock_control.min_stock, sodanca_stock_control.max_stock, sodanca_stock_control.order_mod, sodanca_stock_control.lead_time
@@ -229,7 +228,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 						product_group = vendor[0]
 					else:
 						product_vendor = vendor[0]
-						product_group = '0'
+						product_group = vendor[0]
 
 					# qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
 					# print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
