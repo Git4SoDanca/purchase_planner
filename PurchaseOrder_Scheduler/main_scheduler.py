@@ -822,7 +822,7 @@ def parse_attachments(conn, companycode):
 					# print(log_str)
 					description = line[0]+line[1]+line[2]+line[3]+line[4]+line[5]
 					insert_query = "INSERT INTO sodanca_pp_barcode_audit (barcode, product_description) VALUES ({0},{1})".format(product_barcode,description)
-					log_entry(logfilename,log_str)
+					# log_entry(logfilename,log_str)
 
 				for product in products:
 					product_id = product[0]

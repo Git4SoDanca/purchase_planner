@@ -11,7 +11,7 @@ class reg(object):
             setattr(self, attr, val)
 
 try:
-    conn = psycopg2.connect("dbname='OE-BackupProd-USA' host='192.168.100.70' user='sodanca' password='iZ638GD'")
+    conn = psycopg2.connect("dbname='OE-Prod-USA-D1' host='192.168.100.70' user='purchase_planner' password='wy92ugzE98yz'")
 
 except:
     print("I am unable to connect to the database")
@@ -19,9 +19,9 @@ except:
 cur = conn.cursor()
 cur2 = conn.cursor()
 
-table_names = ['sodanca_stock_control_q1_2017','sodanca_stock_control_q2_2017','sodanca_stock_control_q3_2017','sodanca_stock_control_ q4_2017']
-qtr_start_dates = ['2017-01-01','2017-04-01','2017-07-01','2017-10-01']
-qtr_end_dates = ['2017-03-31','2017-06-30','2017-09-30','2017-12-31']
+table_names = ['sodanca_stock_control_q1_2018','sodanca_stock_control_q2_2018','sodanca_stock_control_q3_2018','sodanca_stock_control_ q4_2018']
+qtr_start_dates = ['2018-01-01','2018-04-01','2018-07-01','2018-10-01']
+qtr_end_dates = ['2018-03-31','2018-06-30','2018-09-30','2018-12-31']
 
 
 for n in range(0,3):
