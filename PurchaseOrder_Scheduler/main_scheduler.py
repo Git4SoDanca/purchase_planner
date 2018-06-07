@@ -294,6 +294,7 @@ def drop_results_table(conn, companycode):
 		qty_on_hand numeric,
 		sales_trend numeric,
 		purchase_price numeric,
+		status character(1) DEFAULT 'N',
 		--box_capacity integer,
 		CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
 	)
@@ -512,6 +513,7 @@ def create_tables(conn, companycode):
 		  qty_on_hand numeric,
 		  sales_trend numeric,
 		  purchase_price numeric,
+		  status character(1) DEFAULT 'N',
 		  --box_capacity integer,
 		  CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
 	  )
