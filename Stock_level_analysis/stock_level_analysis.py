@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/opt/purchase_planner/PurchaseOrder_Scheduler/bin/python
 #
 # Small script to show PostgreSQL and Pyscopg together
 #
