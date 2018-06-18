@@ -23,11 +23,11 @@ cur = conn.cursor()
 cur2 = conn.cursor()
 now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 
-schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = 69 AND cut_off_date > '{0}'::date".format(now_date)
-cursor_dates.scrollable
-cursor_dates.execute(schedule_query)
-schedule_list = cursor_dates.fetchall()
-
+lead_time = lead_normal = 1
+forecast_window_limit = 39
+purchase_period = 2
+initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
+forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+lead_time)
 
 product_list_query = """SELECT sc.id, pp.name
 FROM product_product as pp
@@ -41,11 +41,28 @@ product_list = cur.fetchall()
 
 for product in product_list:
 	print('product id: {0} product name: {1}'.format(product[0],product[1]))
+	pid = product[0]
+		for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
+			start_date = pdate.strftime('%Y-%m-%d')
+			# print('DEBUG - Top of pdate loop:',start_date)
+			end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+			start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
+			end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')`
 
-	cursor_dates.scroll(0,mode='absolute')
-	for cutoff_date in schedule_list:
-		print('Cutoff Date: {0}, Exp Date {1}'.format(cutoff_date[3],cutoff_date[4]))
-		
+			quantities_query = """SELECT
+				COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0),
+				COALESCE(sd_qoo({0},'{3}','{1}'),0),
+				COALESCE(sd_qoo({0},'{1}','{2}'),0),
+				COALESCE(sd_qcomm({0},'{1}','{2}'),0),
+				COALESCE(sd_qs({0},'{1}','{2}'),0),
+				COALESCE(sd_expected_onhand({0},'{1}'),0),
+				COALESCE(sd_qoh({0}),0),
+				COALESCE(sd_sales_trend({0}),0)""".format(pid, start_date, end_date, now_minus_6mo)
+			cur2.execute(quantities_query)
+			qq_list = cur2.fetchall()
+			for qq_each in qq_list:
+				print(qq_each)
+
 
 
 conn.close()
