@@ -1,1 +1,0 @@
-﻿update stock_picking set shipping_register=null,shipping_state='draft' where id in (select id from stock_picking where name in ('OUT10061210','OUT10061212','OUT10061214'))

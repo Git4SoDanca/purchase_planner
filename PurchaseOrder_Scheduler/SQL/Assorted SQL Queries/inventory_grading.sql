@@ -11,9 +11,9 @@ WITH sodanca_inventory_status_last12 AS (
         	THEN 'Dancewear'
         WHEN product_template.categ_id = 43 -- Dancewear
         	THEN 'Dancewear'
-        ELSE 
+        ELSE
         	'Others'
-    END AS category,      
+    END AS category,
     product_template.list_price AS sale_price,
     product_template.standard_price AS cost,
     product_template.list_price - product_template.standard_price AS gross_margin,
@@ -22,7 +22,7 @@ WITH sodanca_inventory_status_last12 AS (
         WHEN sold.product_sale_total IS NOT NULL THEN sold.product_sale_total
         ELSE 0::numeric
     END AS total_sold,
-    ceil(sold.product_sale_total::double precision / 52::double precision) AS weekly_average,
+    ceil(sold.product_sale_total::double precision / 52::double precision) AS weekly_average
 
    FROM product_product
      LEFT JOIN product_template ON product_template.id = product_product.product_tmpl_id
@@ -41,14 +41,14 @@ WITH sodanca_inventory_status_last12 AS (
      LEFT JOIN ( SELECT sodanca_stock_on_hand.id,
             sodanca_stock_on_hand.quantity_on_hand
            FROM sodanca_stock_on_hand) on_hand ON product_product.id = on_hand.id
-  WHERE 
-    (sold.product_sale_total > 0::numeric 
+  WHERE
+    (sold.product_sale_total > 0::numeric
     OR commited.product_committed_total > 0::numeric)
     AND product_template.exclusive_customer IS NULL
     AND product_template.procure_method = 'make_to_stock'
     AND product_template.type = 'product'
     AND product_product.discontinued_product = false
-    
+
   ORDER BY (
         CASE
             WHEN sold.product_sale_total IS NOT NULL THEN sold.product_sale_total
@@ -58,31 +58,31 @@ WITH sodanca_inventory_status_last12 AS (
 
 
 
-SELECT sodanca_inventory_status_last12.*, (PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC))*100 as rank_qty_sold, (PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC))*100 as rank_gr_profit 
+SELECT sodanca_inventory_status_last12.*, (PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC))*100 as rank_qty_sold, (PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC))*100 as rank_gr_profit
 ,
-CASE  
+CASE
 	WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC ) <= .22 THEN 'A'
     WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= .40 THEN 'B'
     WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= .70 THEN 'C'
     ELSE 'D'
-END AS grade_qty_sold, 
-CASE  
+END AS grade_qty_sold,
+CASE
 	WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC) <= .22 THEN 'A'
     WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC) <= .40 THEN 'B'
     WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold*gross_margin DESC) <= .70 THEN 'C'
     ELSE 'D'
 END AS grade_profit,
-CASE  
+CASE
 	WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC ) <= .22 THEN sodanca_inventory_status_last12.weekly_average*4
     WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= .40 THEN sodanca_inventory_status_last12.weekly_average*2
     WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= .70 THEN 1
     ELSE 0
-END AS adjusted_minimum_stock, 
-CASE  
+END AS adjusted_minimum_stock,
+CASE
 	WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC ) <= .22 THEN sodanca_inventory_status_last12.weekly_average*8
     WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= .40 THEN sodanca_inventory_status_last12.weekly_average*5
     WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= .70 THEN 1
     ELSE 0
-END AS adjusted_maximum_stock 
-FROM sodanca_inventory_status_last12 
+END AS adjusted_maximum_stock
+FROM sodanca_inventory_status_last12
 ORDER BY category, name_template, total_sold DESC, sodanca_inventory_status_last12.name, rank_qty_sold

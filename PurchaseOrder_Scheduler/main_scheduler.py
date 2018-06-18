@@ -189,14 +189,14 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 
-				# print(vendor,product_template_name,product_name, product_grade,qto_query)
+				print(vendor,product_template_name,product_name, product_grade,qto_query) # DEBUG
 				cur.execute(qto_query) #cur3
 
 				try:
 
 					cur.execute(qto_query) #cur3
 					product_qto = cur.fetchall()
-					# print(product_qto[0][0])
+					print(product_qto[0][0]) # DEBUG
 
 				except Exception:
 					log_entry(logfilename,"I can't execute query. ERR:003\n")
