@@ -189,7 +189,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 
-				print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
+				# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
 				cur.execute(qto_query) #cur3
 
 				try:
@@ -197,6 +197,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					cur.execute(qto_query) #cur3
 					product_qto = cur.fetchall()
 					if product_qto[0][0] > 0:
+						print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
 						print("Quantity to order: {0}".format(product_qto[0][0])) # DEBUG
 
 				except Exception:
