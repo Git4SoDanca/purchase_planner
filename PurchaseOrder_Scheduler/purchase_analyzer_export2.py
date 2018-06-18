@@ -18,14 +18,15 @@ except:
 	print("I am unable to connect to the database")
 
 fileout = open('purchase_export.csv','w')
+cursor_dates = conn.cursor()
 cur = conn.cursor()
 cur2 = conn.cursor()
 now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 
 schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = 69 AND cut_off_date > '{0}'::date".format(now_date)
-cur.scrollable
-cur.execute(schedule_query)
-schedule_list = cur.fetchall()
+cursor_dates.scrollable()
+cursor_dates.execute(schedule_query)
+schedule_list = cursor_dates.fetchall()
 
 
 product_list_query = """SELECT sc.id, pp.name
@@ -39,8 +40,11 @@ cur.execute(product_list_query)
 product_list = cur.fetchall()
 
 for product in product_list:
-
 	print('product id: {0} product name: {1}'.format(product[0],product[1]))
+
+	cursor_dates.scroll(0,mode='absolute')
+	for cutoff_date in schedule_list:
+			print('Date: {0}'.format(cutoff_date[0]))
 
 
 conn.close()
