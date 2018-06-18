@@ -1,5 +1,4 @@
 #!/opt/purchase_planner/PurchaseOrder_Scheduler/bin/python
-
 import psycopg2
 import datetime
 from dateutil import rrule
@@ -11,12 +10,12 @@ class reg(object):
 			setattr(self, attr, val)
 
 try:
-    conn = psycopg2.connect("dbname='OE-Prod-USA-D1' host='192.168.100.70' user='purchase_planner' password='wy92ugzE98yz'")
+	conn = psycopg2.connect("dbname='OE-Prod-USA-D1' host='192.168.100.70' user='purchase_planner' password='wy92ugzE98yz'")
 	conn.set_session(autocommit=True)
 
 
 except:
-    print("I am unable to connect to the database")
+	print("I am unable to connect to the database")
 
 fileout = open('purchase_export.csv','w')
 cur = conn.cursor()
@@ -41,7 +40,7 @@ product_list = cur.fetchall()
 
 for product in product_list:
 
-    print('product id: {0} product name: {1}'.format(product[0],product[1]))
+	print('product id: {0} product name: {1}'.format(product[0],product[1]))
 
 
 conn.close()
