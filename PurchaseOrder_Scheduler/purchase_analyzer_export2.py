@@ -24,7 +24,7 @@ cur2 = conn.cursor()
 now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 
 schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = 69 AND cut_off_date > '{0}'::date".format(now_date)
-cursor_dates.scrollable()
+cursor_dates.scrollable
 cursor_dates.execute(schedule_query)
 schedule_list = cursor_dates.fetchall()
 
@@ -44,7 +44,8 @@ for product in product_list:
 
 	cursor_dates.scroll(0,mode='absolute')
 	for cutoff_date in schedule_list:
-			print('Date: {0}'.format(cutoff_date[0]))
+		print('Cutoff Date: {0}, Exp Date {1}'.format(cutoff_date[3],cutoff_date[4]))
+		
 
 
 conn.close()
