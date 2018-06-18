@@ -21,6 +21,7 @@ fileout = open('purchase_export.csv','w')
 cursor_dates = conn.cursor()
 cur = conn.cursor()
 cur2 = conn.cursor()
+now = datetime.datetime.now()
 now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 
 lead_time = lead_normal = 1
@@ -42,26 +43,28 @@ product_list = cur.fetchall()
 for product in product_list:
 	print('product id: {0} product name: {1}'.format(product[0],product[1]))
 	pid = product[0]
-		for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
-			start_date = pdate.strftime('%Y-%m-%d')
-			# print('DEBUG - Top of pdate loop:',start_date)
-			end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
-			start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
-			end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')`
+	for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
+		start_date = pdate.strftime('%Y-%m-%d')
+		# print('DEBUG - Top of pdate loop:',start_date)
+		end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+		#start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
+		#end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+		now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 26)).strftime('%Y-%m-%d')
+		
 
-			quantities_query = """SELECT
-				COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0),
-				COALESCE(sd_qoo({0},'{3}','{1}'),0),
-				COALESCE(sd_qoo({0},'{1}','{2}'),0),
-				COALESCE(sd_qcomm({0},'{1}','{2}'),0),
-				COALESCE(sd_qs({0},'{1}','{2}'),0),
-				COALESCE(sd_expected_onhand({0},'{1}'),0),
-				COALESCE(sd_qoh({0}),0),
-				COALESCE(sd_sales_trend({0}),0)""".format(pid, start_date, end_date, now_minus_6mo)
-			cur2.execute(quantities_query)
-			qq_list = cur2.fetchall()
-			for qq_each in qq_list:
-				print(qq_each)
+		quantities_query = """SELECT
+			COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0),
+			COALESCE(sd_qoo({0},'{3}','{1}'),0),
+			COALESCE(sd_qoo({0},'{1}','{2}'),0),
+			COALESCE(sd_qcomm({0},'{1}','{2}'),0),
+			COALESCE(sd_qs({0},'{1}','{2}'),0),
+			COALESCE(sd_expected_onhand({0},'{1}'),0),
+			COALESCE(sd_qoh({0}),0),
+			COALESCE(sd_sales_trend({0}),0)""".format(pid, start_date, end_date, now_minus_6mo)
+		cur2.execute(quantities_query)
+		qq_list = cur2.fetchall()
+		for qq_each in qq_list:
+			print(qq_each)
 
 
 
