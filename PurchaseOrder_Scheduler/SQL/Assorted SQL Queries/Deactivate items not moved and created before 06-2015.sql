@@ -1,0 +1,1 @@
+UPDATE product_product SET active = false WHERE to_char(product_product.create_date,'YYYY-MM-DD') < '2015-06-01' AND id NOT IN(SELECT distinct product_id from stock_move)

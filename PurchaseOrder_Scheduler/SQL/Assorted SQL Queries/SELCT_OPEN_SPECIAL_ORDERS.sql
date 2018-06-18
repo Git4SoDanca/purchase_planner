@@ -1,0 +1,1 @@
+SELECT * FROM stock_picking WHERE origin IN ((SELECT  array_to_string(regexp_matches(origin, 'SO\d{8}')),',') FROM stock_move WHERE ( SELECT regexp_matches(origin, 'SO\d{8}')) IS NOT NULL AND state NOT IN ('done','cancel') AND date_expected <='2016-12-31'),',')) AND type = 'out'
