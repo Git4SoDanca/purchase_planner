@@ -1538,6 +1538,7 @@ def install_update():
 			main_menu()
 			break
 		elif int(ch) in range(1,len(company_idx)):
+
 			companycode = company_idx[int(ch)]
 			break
 
