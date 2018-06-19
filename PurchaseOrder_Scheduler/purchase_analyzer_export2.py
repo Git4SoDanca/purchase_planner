@@ -50,7 +50,7 @@ for product in product_list:
 		#start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
 		#end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 		now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 26)).strftime('%Y-%m-%d')
-		
+
 
 		quantities_query = """SELECT
 			COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0),
@@ -64,9 +64,7 @@ for product in product_list:
 		cur2.execute(quantities_query)
 		qq_list = cur2.fetchall()
 		for qq_each in qq_list:
-			print(qq_each)
-
-
+			print("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}".format(pid,pname,start_date,end_date,now_minus_6mo,qq_list[0],qq_list[1],qq_list[2],qq_list[3],qq_list[4],qq_list[5],qq_list[6],qq_list[7]))
 
 conn.close()
 fileout.close()
