@@ -65,7 +65,7 @@ for product in product_list:
 		cur2.execute(quantities_query)
 		qq_list = cur2.fetchall()
 		for qq_each in qq_list:
-			print("{0},{1},{2},{3},{4},{5},{6},{7}".format(pid,pname,start_date,end_date,now_minus_6mo,qq_list[0],qq_list[1],qq_list[2])) #",{8},{9},{10},{11},{12}" ,qq_list[3],qq_list[4],qq_list[5],qq_list[6],qq_list[7]
+			print("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}".format(pid,pname,start_date,end_date,now_minus_6mo,qq_each[0],qq_each[1],qq_each[2],qq_each[3],qq_each[4],qq_each[5],qq_each[6],qq_each[7]))
 
 conn.close()
 fileout.close()
