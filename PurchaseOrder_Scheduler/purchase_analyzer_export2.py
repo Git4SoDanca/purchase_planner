@@ -26,20 +26,20 @@ now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 
 lead_time = lead_normal = 1
 forecast_window_limit = 39
-purchase_period = 2
+purchase_period = 1
 initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
 forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+lead_time)
 
 product_list_query = """SELECT sc.id, pp.name
 FROM product_product as pp
-LEFT JOIN (select id from sodanca_stock_control where grade = 'A') as sc ON pp.id = sc.id
+LEFT JOIN (select id from sodanca_stock_control where grade in ('A','B')) as sc ON pp.id = sc.id
 WHERE sc.id IS NOT NULL
 ORDER BY pp.name_template"""
 
 cur.execute(product_list_query)
 
 product_list = cur.fetchall()
-print('pid,product_name,start_date,end_date,quantity_to_order,on_order_late, on_order_current,committed,sold,expected_on_hand,on_hand,trend_last6mo')
+print('pid,product_name,start_date,end_date,quantity_to_order,on_order_late, on_order_current,committed,sold,expected_on_hand,on_hand,trend_last9mo')
 for product in product_list:
 	# print('product id: {0} product name: {1}'.format(product[0],product[1]))
 	pid = product[0]
@@ -50,7 +50,7 @@ for product in product_list:
 		end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 		#start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
 		#end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
-		now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 26)).strftime('%Y-%m-%d')
+		now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 39)).strftime('%Y-%m-%d')
 
 
 		quantities_query = """SELECT
