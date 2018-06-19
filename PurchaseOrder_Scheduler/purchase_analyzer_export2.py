@@ -39,7 +39,7 @@ ORDER BY pp.name_template"""
 cur.execute(product_list_query)
 
 product_list = cur.fetchall()
-fileout.write('pid,product_name,start_date,end_date,quantity_to_order,on_order_late, on_order_current,committed,sold,expected_on_hand,on_hand,trend_last6mo\n')
+fileout.write('pid,product_name,start_date,end_date,quantity_to_order,on_order_late, on_order_current,committed,sold,expected_on_hand,on_hand,trend_last9mo\n')
 for product in product_list:
 	# print('product id: {0} product name: {1}'.format(product[0],product[1]))
 	pid = product[0]
