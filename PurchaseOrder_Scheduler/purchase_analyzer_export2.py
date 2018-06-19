@@ -43,6 +43,7 @@ product_list = cur.fetchall()
 for product in product_list:
 	print('product id: {0} product name: {1}'.format(product[0],product[1]))
 	pid = product[0]
+	pname = product[1]
 	for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
 		start_date = pdate.strftime('%Y-%m-%d')
 		# print('DEBUG - Top of pdate loop:',start_date)
@@ -64,7 +65,7 @@ for product in product_list:
 		cur2.execute(quantities_query)
 		qq_list = cur2.fetchall()
 		for qq_each in qq_list:
-			print("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}".format(pid,pname,start_date,end_date,now_minus_6mo,qq_list[0],qq_list[1],qq_list[2],qq_list[3],qq_list[4],qq_list[5],qq_list[6],qq_list[7]))
+			print("{0},{1},{2},{3},{4},{5},{6},{7}".format(pid,pname,start_date,end_date,now_minus_6mo,qq_list[0],qq_list[1],qq_list[2])) #",{8},{9},{10},{11},{12}" ,qq_list[3],qq_list[4],qq_list[5],qq_list[6],qq_list[7]
 
 conn.close()
 fileout.close()
