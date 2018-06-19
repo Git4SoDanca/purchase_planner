@@ -48,8 +48,8 @@ for product in product_list:
 		start_date = pdate.strftime('%Y-%m-%d')
 		# print('DEBUG - Top of pdate loop:',start_date)
 		end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
-		#start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
-		#end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+		start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
+		end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 		now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 39)).strftime('%Y-%m-%d')
 
 
@@ -58,10 +58,10 @@ for product in product_list:
 			COALESCE(sd_qoo({0},'{3}','{1}'),0),
 			COALESCE(sd_qoo({0},'{1}','{2}'),0),
 			COALESCE(sd_qcomm({0},'{1}','{2}'),0),
-			COALESCE(sd_qs({0},'{1}','{2}'),0),
+			COALESCE(sd_qs({0},'{4}','{5}'),0),
 			COALESCE(sd_expected_onhand({0},'{1}'),0),
 			COALESCE(sd_qoh({0}),0),
-			COALESCE(sd_sales_trend({0}),0)""".format(pid, start_date, end_date, now_minus_6mo)
+			COALESCE(sd_sales_trend({0}),0)""".format(pid, start_date, end_date, now_minus_6mo, start_prev_year, end_prev_year)
 		cur2.execute(quantities_query)
 		qq_list = cur2.fetchall()
 		for qq_each in qq_list:

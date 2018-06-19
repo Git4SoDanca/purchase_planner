@@ -209,7 +209,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				if product_qto[0][0] > 0: ### Production
 				# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
-					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qs({0},'{1}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo)
+					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qs({0},'{4}','{5}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, start_prev_year, end_prev_year)
 					#Still missing box_capacity which should come here maybe as a function or a query
 					# print(prod_details_query)
 					try:
@@ -679,20 +679,23 @@ def create_functions(conn,companycode):
 		CREATE OR REPLACE FUNCTION public.sd_quantity_to_order(
 			pid integer,
 			start_date date,
-			end_date date)
-			RETURNS numeric
-			LANGUAGE 'sql'
+			end_date date,
+		  start_date_prevyr date,
+			end_date_prevyr date
+		)
+		    RETURNS numeric
+		    LANGUAGE 'sql'
 
-			COST 100
-			VOLATILE
+		    COST 100
+		    VOLATILE
 
 		AS $BODY$
 
-		SELECT GREATEST(sd_qs($1,$2,$3),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+		SELECT GREATEST(sd_qs($1,$4,$5),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
 
 		$BODY$;
 
-		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
+		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date, date, date)
 			OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
