@@ -39,9 +39,9 @@ ORDER BY pp.name_template"""
 cur.execute(product_list_query)
 
 product_list = cur.fetchall()
-
+print('pid,product_name,start_date,end_date,quantity_to_order,on_order_late, on_order_current,committed,sold,expected_on_hand,on_hand,trend_last6mo')
 for product in product_list:
-	print('product id: {0} product name: {1}'.format(product[0],product[1]))
+	# print('product id: {0} product name: {1}'.format(product[0],product[1]))
 	pid = product[0]
 	pname = product[1]
 	for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
@@ -65,7 +65,7 @@ for product in product_list:
 		cur2.execute(quantities_query)
 		qq_list = cur2.fetchall()
 		for qq_each in qq_list:
-			print("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}".format(pid,pname,start_date,end_date,now_minus_6mo,qq_each[0],qq_each[1],qq_each[2],qq_each[3],qq_each[4],qq_each[5],qq_each[6],qq_each[7]))
+			fileout.write("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}\n".format(pid,pname,start_date,end_date,qq_each[0],qq_each[1],qq_each[2],qq_each[3],qq_each[4],qq_each[5],qq_each[6],qq_each[7]))
 
 conn.close()
 fileout.close()
