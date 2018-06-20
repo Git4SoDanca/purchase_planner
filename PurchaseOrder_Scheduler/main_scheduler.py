@@ -1237,6 +1237,7 @@ def manual_run():
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		drop_results_table(conn, companycode)
 
 
@@ -1563,8 +1564,8 @@ def install_update():
 		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
-		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn))
-		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+		log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		create_tables(conn, companycode)
 
 
