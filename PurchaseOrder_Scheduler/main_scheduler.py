@@ -765,8 +765,9 @@ def create_functions(conn,companycode):
 	logfilename = config[companycode]['logfilename']
 	try:
 		cur = conn.cursor()
-		cur.execute(functions_query)
-		cur.commit()
+		for function_query in functions_query:
+			cur.execute(function_query)
+			cur.commit()
 		cur.close()
 		log_entry(logfilename,"Functions created successfully.")
 	except Exception as e:
