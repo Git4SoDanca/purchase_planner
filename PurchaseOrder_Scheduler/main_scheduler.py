@@ -534,6 +534,8 @@ def create_tables(conn, companycode):
 		  categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'],
 		  categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'], login=config[companycode]['login'])
 
+	print(table_query)
+
 	logfilename = config[companycode]['logfilename']
 	try:
 		cur = conn.cursor()
@@ -1628,8 +1630,9 @@ def install_update():
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
-		create_tables(conn, companycode)
 		create_functions(conn, companycode)
+		create_tables(conn, companycode)
+
 
 
 	except Exception as e:
