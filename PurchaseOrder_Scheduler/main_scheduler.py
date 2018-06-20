@@ -323,6 +323,7 @@ def drop_results_table(conn, companycode):
 	cur.close()
 
 def create_tables(conn, companycode):
+	print("In create_tables") #DEBUG
 	table_query = """
 	DROP TABLE IF EXISTS sodanca_stock_control;
 	CREATE TABLE sodanca_stock_control AS
@@ -539,6 +540,7 @@ def create_tables(conn, companycode):
 		cur.execute(table_query)
 		cur.commit()
 		cur.close()
+		print("sodanca_stock_control created successfully.")
 		log_entry(logfilename,"sodanca_stock_control created successfully.")
 	except Exception as e:
 		log_entry(logfilename, 'Error creating sodanca_stock_control. ERR:008')
@@ -1619,20 +1621,21 @@ def install_update():
 
 	logfilename = config[companycode]['logfilename']#'purchase_planner.log'
 	print(logfilename) #DEBUG
-	# try:
+	try:
 
-	dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
-	conn = psycopg2.connect(dsn)
-	conn.set_session(autocommit=True)
-	log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-	print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
-	create_tables(conn, companycode)
+		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
+		conn = psycopg2.connect(dsn)
+		conn.set_session(autocommit=True)
+		log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		create_tables(conn, companycode)
+		create_functions(conn, companycode)
 
 
-	# except Exception as e:
-	# 	log_str = "I am unable to connect to the database, check companycode ERR:111\n\n" + str(e)
-	# 	print(logfilename,log_str)
-	# 	log_entry(logfilename,log_str)
+	except Exception as e:
+		log_str = "I am unable to connect to the database, check companycode ERR:111\n\n" + str(e)
+		print(logfilename,log_str)
+		log_entry(logfilename,log_str)
 
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
