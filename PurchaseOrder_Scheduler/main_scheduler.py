@@ -546,7 +546,7 @@ def create_tables(conn, companycode):
 		raise
 
 def create_functions(conn,companycode):
-	functions_query = """
+	functions_query[0] = """
 		-- Quantity Committed
 		CREATE OR REPLACE FUNCTION public.sd_qcomm(
 			pid integer,
@@ -574,7 +574,9 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_qcomm(integer, date, date)
 			OWNER TO {login};
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	functions_query[1] = """
 		-- Quantity on order
 		CREATE OR REPLACE FUNCTION public.sd_qoo(
 			pid integer,
@@ -602,7 +604,9 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_qoo(integer, date, date)
 			OWNER TO {login};
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	functions_query[2] = """
 		-- Quantity Sold
 		CREATE OR REPLACE FUNCTION public.sd_qs(
 			pid integer,
@@ -632,7 +636,9 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_qs(integer, date, date)
 			OWNER TO {login};
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	functions_query[3] = """
 		-- Quantity on hand
 		CREATE OR REPLACE FUNCTION sd_qoh(pid int) RETURNS decimal AS
 		$$
@@ -655,25 +661,29 @@ def create_functions(conn,companycode):
 		  GROUP BY stock_move.product_id
 		$$ LANGUAGE SQL;
 
+		ALTER FUNCTION public.sd_qoh(integer) OWNER TO {login};
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	functions_query[4] = """
 		-- Quantity on hand expected
 		CREATE OR REPLACE FUNCTION public.sd_expected_onhand( pid integer, start_date date) RETURNS numeric
 		LANGUAGE 'sql'
 		COST 100
 		VOLATILE AS $BODY$
 		SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'6 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs($1,now()::date,$2),sd_qcomm($1,(now()-'6 months'::interval)::date,$2)),0));
-
-
 		$BODY$;
 
-
 		ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO {login};
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	functions_query[5] = """
 		-- Sales trend
 		CREATE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
 		$$
 		SELECT round(sd_qs($1,(now()-'6 months'::interval)::date, now()::date)/sd_qs($1,(now()- '18 months'::interval)::date,(now()- '12 months'::interval)::date)*100,2) as growth;
 		$$ LANGUAGE SQL;
+
+		ALTER FUNCTION public.sd_sales_trend(integer) OWNER TO {login};
 
 		-- Quantity to order - Purchase planner
 		CREATE OR REPLACE FUNCTION public.sd_quantity_to_order(
@@ -697,9 +707,10 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date, date, date)
 			OWNER TO {login};
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = 'purchase_planner')
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 	#config[companycode]['login']
-	print(functions_query) #DEBUG
+	for function_query in functions_query:
+		print('function_query',function_query) #DEBUG
 	logfilename = config[companycode]['logfilename']
 	try:
 		cur = conn.cursor()
