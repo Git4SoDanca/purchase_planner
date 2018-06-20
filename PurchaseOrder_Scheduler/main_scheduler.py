@@ -546,7 +546,7 @@ def create_tables(conn, companycode):
 		raise
 
 def create_functions(conn,companycode):
-
+	print("Inside create_functions")
 	print ( """
 		-- Quantity Committed
 		CREATE OR REPLACE FUNCTION public.sd_qcomm(
