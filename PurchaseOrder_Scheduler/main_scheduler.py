@@ -576,6 +576,9 @@ def create_functions(conn,companycode):
 			OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	for function_query in functions_query:
+		print('function_query',function_query) #DEBUG
+
 	functions_query[1] = """
 		-- Quantity on order
 		CREATE OR REPLACE FUNCTION public.sd_qoo(
@@ -605,6 +608,9 @@ def create_functions(conn,companycode):
 		ALTER FUNCTION public.sd_qoo(integer, date, date)
 			OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+
+	for function_query in functions_query:
+		print('function_query',function_query) #DEBUG
 
 	functions_query[2] = """
 		-- Quantity Sold
@@ -638,6 +644,9 @@ def create_functions(conn,companycode):
 			OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	for function_query in functions_query:
+		print('function_query',function_query) #DEBUG
+
 	functions_query[3] = """
 		-- Quantity on hand
 		CREATE OR REPLACE FUNCTION sd_qoh(pid int) RETURNS decimal AS
@@ -664,6 +673,9 @@ def create_functions(conn,companycode):
 		ALTER FUNCTION public.sd_qoh(integer) OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	for function_query in functions_query:
+		print('function_query',function_query) #DEBUG
+
 	functions_query[4] = """
 		-- Quantity on hand expected
 		CREATE OR REPLACE FUNCTION public.sd_expected_onhand( pid integer, start_date date) RETURNS numeric
@@ -675,6 +687,9 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+
+	for function_query in functions_query:
+		print('function_query',function_query) #DEBUG
 
 	functions_query[5] = """
 		-- Sales trend
