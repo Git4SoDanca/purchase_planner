@@ -315,6 +315,7 @@ def drop_results_table(conn, companycode):
 		cur.execute(clear_table_query)
 		conn.commit()
 		cur.close()
+		print("sodanca_purchase_plan was dropped.")
 	except Exception:
 		print(conn.notices)
 		log_entry(logfilename,"Cannot clear sodanca_purchase_plan. ERR:000\n")
@@ -325,8 +326,7 @@ def drop_results_table(conn, companycode):
 def create_tables(conn, companycode):
 	print("In create_tables") #DEBUG
 	table_queries = ['']*2
-
-	table_query[0] = """
+	table_queries[0] = """
 		DROP TABLE IF EXISTS sodanca_stock_control;
 		CREATE TABLE sodanca_stock_control AS
 		(
@@ -489,30 +489,9 @@ def create_tables(conn, companycode):
 		-- Update grades on product_product table
 		UPDATE product_product SET grade = sodanca_stock_control.grade FROM sodanca_stock_control
 		WHERE product_product.id = sodanca_stock_control.id;
-	""".format(
-			grade_a_margin = config[companycode]['grade_a_margin'],
-			grade_b_margin = config[companycode]['grade_b_margin'],
-			grade_c_margin = config[companycode]['grade_c_margin'],
-			min_inv_time_a = config[companycode]['min_inv_time_a'],
-			max_inv_time_a = config[companycode]['max_inv_time_a'],
-			min_inv_time_b = config[companycode]['min_inv_time_b'],
-			max_inv_time_b = config[companycode]['max_inv_time_b'],
-			min_inv_time_c = config[companycode]['min_inv_time_c'],
-			max_inv_time_c = config[companycode]['max_inv_time_c'],
-			min_inv_time_d = config[companycode]['min_inv_time_d'],
-			max_inv_time_d = config[companycode]['max_inv_time_d'],
-			categ_ba = config[companycode]['categ_ba'],
-			categ_ch = config[companycode]['categ_ch'],
-			categ_jz = config[companycode]['categ_jz'],
-			categ_tights = config[companycode]['categ_tights'],
-			categ_shoes = config[companycode]['categ_shoes'],
-			categ_dwear = config[companycode]['categ_dwear'],
-			wh_stock = config[companycode]['wh_stock'],
-			customers = config[companycode]['customers'],
-			supplier = config[companycode]['supplier'],
-			login=config[companycode]['login']))
-
-	table_query[1] = """
+	""".format(grade_a_margin = config[companycode]['grade_a_margin'], grade_b_margin = config[companycode]['grade_b_margin'], grade_c_margin = config[companycode]['grade_c_margin'], min_inv_time_a = config[companycode]['min_inv_time_a'], max_inv_time_a = config[companycode]['max_inv_time_a'], min_inv_time_b = config[companycode]['min_inv_time_b'], max_inv_time_b = config[companycode]['max_inv_time_b'], min_inv_time_c = config[companycode]['min_inv_time_c'], max_inv_time_c = config[companycode]['max_inv_time_c'], min_inv_time_d = config[companycode]['min_inv_time_d'], max_inv_time_d = config[companycode]['max_inv_time_d'], categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'], categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'], login=config[companycode]['login'])
+	print(table_queries[0])
+	table_queries[1] = """
 		-- Create purchase plan table to be used by POG
 		DROP TABLE IF EXISTS public.sodanca_purchase_plan;
 
@@ -574,15 +553,13 @@ def create_tables(conn, companycode):
 				# customers = config[companycode]['customers'],
 				# supplier = config[companycode]['supplier'],
 				login=config[companycode]['login'])
-
-	for table_query in table_queries:
-		print(table_query)
-
+	print(table_queries[0])
 	logfilename = config[companycode]['logfilename']
 	try:
 		cur = conn.cursor()
-		cur.execute(table_query)
-		conn.commit()
+		for table_query in table_queries:
+			cur.execute(table_query)
+			conn.commit()
 		cur.close()
 		print("sodanca_stock_control created successfully.")
 		log_entry(logfilename,"sodanca_stock_control created successfully.")
@@ -1248,7 +1225,8 @@ def main_menu():
 
 def exec_menu(choice):
 	# os.system('clear')
-	ch = choice.lower()
+	#ch = choice.lower()
+	ch = choice
 	if ch == '':
 		menu_actions['main_menu']()
 	else:
@@ -1343,7 +1321,7 @@ def manual_run():
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		#print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		drop_results_table(conn, companycode)
 
 
@@ -1673,7 +1651,7 @@ def install_update():
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		#print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		create_functions(conn, companycode)
 		create_tables(conn, companycode)
 
@@ -1698,7 +1676,7 @@ def main(companycode):
 		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
-		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		#print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 		drop_results_table(conn,companycode)
 		log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
