@@ -550,7 +550,7 @@ def create_tables(conn, companycode):
 		raise
 
 def create_functions(conn,companycode):
-	functions_query = []
+	functions_query = ['']*6
 	print("Inside create_functions")
 	print ( """
 		-- Quantity Committed
