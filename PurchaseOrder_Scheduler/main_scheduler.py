@@ -699,6 +699,7 @@ def create_functions(conn,companycode):
 			OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = 'purchase_planner')
 	#config[companycode]['login']
+	print(functions_query) #DEBUG
 	logfilename = config[companycode]['logfilename']
 	try:
 		cur = conn.cursor()
