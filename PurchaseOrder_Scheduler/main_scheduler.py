@@ -1604,12 +1604,13 @@ def install_update():
 		elif int(ch) in range(1,len(company_idx)):
 
 			companycode = company_idx[int(ch)]
+			print('\nCompany selected - ',companycode,'\n')
 			break
 
 		else:
 			print('Not a valid option. Try again')
 
-	print('\nCompany selected - ',companycode,'\n')
+
 
 	dbname = config[companycode]['db_name']
 	db_server_address = config[companycode]['db_server_address']
@@ -1617,14 +1618,15 @@ def install_update():
 	passwd = config[companycode]['passwd']
 
 	logfilename = config[companycode]['logfilename']#'purchase_planner.log'
+	print(logfilename) #DEBUG
+	# try:
 
-	try:
-		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
-		conn = psycopg2.connect(dsn)
-		conn.set_session(autocommit=True)
-		log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
-		create_tables(conn, companycode)
+	dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
+	conn = psycopg2.connect(dsn)
+	conn.set_session(autocommit=True)
+	log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+	print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+	create_tables(conn, companycode)
 
 
 	except Exception as e:
