@@ -697,8 +697,8 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date, date, date)
 			OWNER TO {login};
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
-
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = 'purchase_planner')
+	#config[companycode]['login']
 	logfilename = config[companycode]['logfilename']
 	try:
 		cur = conn.cursor()
