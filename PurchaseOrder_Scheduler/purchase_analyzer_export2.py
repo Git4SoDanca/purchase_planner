@@ -10,7 +10,7 @@ class reg(object):
 			setattr(self, attr, val)
 
 try:
-	conn = psycopg2.connect("dbname='OE-Prod-USA-D1' host='192.168.100.70' user='purchase_planner' password='wy92ugzE98yz'")
+	conn = psycopg2.connect("dbname='OE-Prod-USA-D1-OLD' host='192.168.100.70' user='purchase_planner' password='wy92ugzE98yz'")
 	conn.set_session(autocommit=True)
 
 
@@ -32,8 +32,8 @@ forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_li
 
 product_list_query = """SELECT sc.id, pp.name
 FROM product_product as pp
-LEFT JOIN (select id from sodanca_stock_control where grade in ('A','B')) as sc ON pp.id = sc.id
-WHERE sc.id IS NOT NULL
+LEFT JOIN (select id from sodanca_stock_control where grade in ('A')) as sc ON pp.id = sc.id
+WHERE sc.id IS NOT NULL AND pp.name_template IN ('SD16', 'JZ76L')
 ORDER BY pp.name_template"""
 
 cur.execute(product_list_query)
