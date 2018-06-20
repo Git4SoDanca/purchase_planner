@@ -209,7 +209,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				if product_qto[0][0] > 0: ### Production
 				# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
-					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qs({0},'{4}','{5}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, start_prev_year, end_prev_year)
+					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{5}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, start_prev_year, end_prev_year)
 					#Still missing box_capacity which should come here maybe as a function or a query
 					# print(prod_details_query)
 					try:
@@ -633,6 +633,37 @@ def create_functions(conn,companycode):
 		ALTER FUNCTION public.sd_qs(integer, date, date)
 			OWNER TO {login};
 
+		-- Quantity Sold Last year
+		CREATE OR REPLACE FUNCTION public.sd_qs_prev_yr(
+			pid integer,
+			start_date date,
+			end_date date)
+			RETURNS numeric
+			LANGUAGE 'sql'
+
+			COST 100
+			VOLATILE
+		AS $BODY$
+
+		SELECT
+		CASE
+			WHEN sum(stock_move.product_qty) != 0 THEN sum(stock_move.product_qty) ELSE 0 END AS on_order_total
+		FROM stock_move
+		WHERE
+			stock_move.location_dest_id = 9
+			AND stock_move.location_id = 12
+			AND (stock_move.state::text = 'done'::character varying)
+			AND date_expected >= ($2 - interval '1 year') --start_date
+			AND date_expected < ($3 - interval '1 year') --end_date
+			AND stock_move.product_id = $1
+		GROUP BY stock_move.product_id
+
+		$BODY$;
+
+		ALTER FUNCTION public.sd_qs_prev_yr(integer, date, date)
+			OWNER TO {login};
+
+
 		-- Quantity on hand
 		CREATE OR REPLACE FUNCTION sd_qoh(pid int) RETURNS decimal AS
 		$$
@@ -661,7 +692,7 @@ def create_functions(conn,companycode):
 		LANGUAGE 'sql'
 		COST 100
 		VOLATILE AS $BODY$
-		SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'6 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs($1,now()::date,$2),sd_qcomm($1,(now()-'6 months'::interval)::date,$2)),0));
+		SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'6 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs_prev_yr($1,now()::date,$2),sd_qcomm($1,(now()-'6 months'::interval)::date,$2)),0));
 
 
 		$BODY$;
@@ -691,7 +722,7 @@ def create_functions(conn,companycode):
 
 		AS $BODY$
 
-		SELECT GREATEST(sd_qs($1,$4,$5),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+		SELECT GREATEST(sd_qs_prev_yr($1,$4,$5),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
 
 		$BODY$;
 
@@ -1562,6 +1593,7 @@ def install_update():
 	try:
 		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
 		print(dsn)
+
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
