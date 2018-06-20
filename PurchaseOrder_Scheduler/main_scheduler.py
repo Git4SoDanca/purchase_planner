@@ -1629,10 +1629,10 @@ def install_update():
 	create_tables(conn, companycode)
 
 
-	except Exception as e:
-		log_str = "I am unable to connect to the database, check companycode ERR:111\n\n" + str(e)
-		print(logfilename,log_str)
-		log_entry(logfilename,log_str)
+	# except Exception as e:
+	# 	log_str = "I am unable to connect to the database, check companycode ERR:111\n\n" + str(e)
+	# 	print(logfilename,log_str)
+	# 	log_entry(logfilename,log_str)
 
 ### ------------------------------------ MAIN() ------------------------------------------ ###
 
