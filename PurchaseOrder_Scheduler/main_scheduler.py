@@ -19,8 +19,9 @@ class reg(object):
 			setattr(self, attr, val)
 
 def log_entry(logfile, entry_text):
+	print(entry_text,'\n')
 	fil = open(logfile,'a')
-	fil.write(entry_text)
+	fil.write(entry_text,'\n')
 	fil.close()
 
 def roundup(x,y):
@@ -153,7 +154,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		# print(vendor)
 
 		try:
-			# print(product_list_query)
+			print(product_list_query)
 			cur.execute(product_list_query)
 			product_count = cur.rowcount
 			product_list = cur.fetchall()
