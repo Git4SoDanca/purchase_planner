@@ -136,7 +136,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 		product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
 			  product_product.id, sodanca_stock_control.grade,
-			  sodanca_stock_control.min_stock, sodanca_stock_control.max_stock, sodanca_stock_control.order_mod, sodanca_stock_control.lead_time
+			  sodanca_stock_control.min_stock, sodanca_stock_control.max_stock, sodanca_stock_control.order_mod --, sodanca_stock_control.lead_time
 		FROM product_supplierinfo
 		LEFT JOIN product_template ON product_template.id = product_supplierinfo.product_id
 		LEFT JOIN product_product ON product_supplierinfo.product_id = product_product.product_tmpl_id
