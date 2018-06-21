@@ -1341,8 +1341,6 @@ def manual_run():
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 		#print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
-		drop_results_table(conn, companycode)
-
 
 	except Exception as e:
 		log_str = "I am unable to connect to the database, check companycode ERR:100\n\n" + str(e)
@@ -1428,6 +1426,7 @@ def manual_run():
 			try:
 				drop_results_table(conn,companycode)
 				log_str = "Results table cleared."
+				log_entry(config[companycode]['logfilename'],log_str)
 			except Exception as e:
 				log_entry(logfilename,'Could not clear table'+str(e))
 				raise
