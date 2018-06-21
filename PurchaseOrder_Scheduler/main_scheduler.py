@@ -456,7 +456,7 @@ def create_tables(conn, companycode):
 						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_b_margin THEN const.mod_b_ba
 						ELSE 1
 					END
-				WHEN category_id = ANY (const.categ_ch) THEN mod_ch
+				WHEN category_id = ANY (const.categ_ch) THEN
 					CASE
 						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_a_margin THEN const.mod_a_ch
 						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_b_margin THEN const.mod_b_ch
