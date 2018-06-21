@@ -343,9 +343,12 @@ def create_tables(conn, companycode):
 				{max_inv_time_c} as max_inv_time_c,
 				{min_inv_time_d} as min_inv_time_d,
 				{max_inv_time_d} as max_inv_time_d,
-				{mod_ba} as mod_ba,
-				{mod_jz} as mod_jz,
-				{mod_ch} as mod_ch,
+				{mod_a_ba} as mod_a_ba,
+				{mod_a_jz} as mod_a_jz,
+				{mod_a_ch} as mod_a_ch,
+				{mod_b_ba} as mod_b_ba,
+				{mod_b_jz} as mod_b_jz,
+				{mod_b_ch} as mod_b_ch,
 				array[{categ_ba}] as categ_ba,
 				array[{categ_ch}] as categ_ch,
 				array[{categ_jz}] as categ_jz
@@ -441,9 +444,21 @@ def create_tables(conn, companycode):
 			END AS adjusted_maximum_stock,
 
 			CASE
-				WHEN category_id = ANY (const.categ_jz) THEN mod_jz
-				WHEN category_id = ANY (const.categ_ba) THEN mod_ba
+				WHEN category_id = ANY (const.categ_jz) THEN
+					CASE
+						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_a_margin THEN const.mod_a_jz
+						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_b_margin THEN const.mod_b_jz
+						ELSE 1
+				WHEN category_id = ANY (const.categ_ba) THEN
+					CASE
+						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_a_margin THEN const.mod_a_ba
+						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_b_margin THEN const.mod_b_ba
+						ELSE 1
 				WHEN category_id = ANY (const.categ_ch) THEN mod_ch
+					CASE
+						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_a_margin THEN const.mod_a_ch
+						WHEN PERCENT_RANK() OVER (PARTITION BY category ORDER BY total_sold DESC) <= const.grade_b_margin THEN const.mod_b_ch
+						ELSE 1
 				ELSE 1
 
 			END AS order_mod
@@ -470,7 +485,7 @@ def create_tables(conn, companycode):
 			THEN inventory_grade.adjusted_maximum_stock
 			ELSE 0.0
 		END AS max_stock,
-			CASE
+		CASE
 			WHEN inventory_grade.order_mod IS NOT NULL
 			THEN inventory_grade.order_mod
 			ELSE 1
@@ -489,7 +504,8 @@ def create_tables(conn, companycode):
 		-- Update grades on product_product table
 		UPDATE product_product SET grade = sodanca_stock_control.grade FROM sodanca_stock_control
 		WHERE product_product.id = sodanca_stock_control.id;
-	""".format(grade_a_margin = config[companycode]['grade_a_margin'], grade_b_margin = config[companycode]['grade_b_margin'], grade_c_margin = config[companycode]['grade_c_margin'], min_inv_time_a = config[companycode]['min_inv_time_a'], max_inv_time_a = config[companycode]['max_inv_time_a'], min_inv_time_b = config[companycode]['min_inv_time_b'], max_inv_time_b = config[companycode]['max_inv_time_b'], min_inv_time_c = config[companycode]['min_inv_time_c'], max_inv_time_c = config[companycode]['max_inv_time_c'], min_inv_time_d = config[companycode]['min_inv_time_d'], max_inv_time_d = config[companycode]['max_inv_time_d'], categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'], categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'], login=config[companycode]['login'])
+	""".format(grade_a_margin = config[companycode]['grade_a_margin'], grade_b_margin = config[companycode]['grade_b_margin'], grade_c_margin = config[companycode]['grade_c_margin'], min_inv_time_a = config[companycode]['min_inv_time_a'], max_inv_time_a = config[companycode]['max_inv_time_a'], min_inv_time_b = config[companycode]['min_inv_time_b'], max_inv_time_b = config[companycode]['max_inv_time_b'], min_inv_time_c = config[companycode]['min_inv_time_c'], max_inv_time_c = config[companycode]['max_inv_time_c'], min_inv_time_d = config[companycode]['min_inv_time_d'], max_inv_time_d = config[companycode]['max_inv_time_d'], categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'], categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'], login=config[companycode]['login'], mod_a_ba=config[companycode]['a_ba'],mod_b_ba=config[companycode]['b_ba'],mod_a_ch=config[companycode]['a_ch'],mod_b_ch=config[companycode]['b_ch'],mod_a_jz=config[companycode]['a_jz'],mod_b_jz=config[companycode]['b_jz'])
+
 	print(table_queries[0])
 	table_queries[1] = """
 		-- Create purchase plan table to be used by POG
