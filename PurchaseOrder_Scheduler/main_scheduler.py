@@ -21,7 +21,8 @@ class reg(object):
 def log_entry(logfile, entry_text):
 	print(entry_text,'\n')
 	fil = open(logfile,'a')
-	fil.write(entry_text,'\n')
+	fil.write(entry_text)
+	fil.write('\n')
 	fil.close()
 
 def roundup(x,y):
