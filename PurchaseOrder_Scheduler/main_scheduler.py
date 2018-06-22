@@ -177,7 +177,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			min_stock = product[7]
 			max_stock = product[8]
 			order_mod = product[9]
-			lead_time = product[10]
+			# lead_time = product[10]
 
 			purchase_period = period_length #in weeks
 
