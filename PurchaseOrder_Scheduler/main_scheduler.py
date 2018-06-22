@@ -590,37 +590,7 @@ def create_tables(conn, companycode):
 		raise
 
 def create_functions(conn,companycode):
-	functions_query = ['']*6
-	# print("Inside create_functions")
-	# print ( """
-	# 	-- Quantity Committed
-	# 	CREATE OR REPLACE FUNCTION public.sd_qcomm(
-	# 		pid integer,
-	# 		start_date date,
-	# 		end_date date)
-	# 		RETURNS numeric
-	# 		LANGUAGE 'sql'
-	#
-	# 		COST 100
-	# 		VOLATILE
-	# 	AS $BODY$
-	#
-	# 	SELECT sum(stock_move.product_qty) AS product_committed_total
-	# 	FROM stock_move
-	# 	WHERE
-	# 		stock_move.location_dest_id = {customers}
-	# 		AND stock_move.location_id = {wh_stock}
-	# 		AND (stock_move.state::text = ANY (ARRAY['confirmed'::character varying, 'assigned'::character varying]::text[]))
-	# 		AND date_expected >= $2
-	# 		AND date_expected < $3
-	# 		AND stock_move.product_id = $1
-	# 	GROUP BY stock_move.product_id
-	#
-	# 	$BODY$;
-	#
-	# 	ALTER FUNCTION public.sd_qcomm(integer, date, date)
-	# 		OWNER TO {login};
-	# """.format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login']))
+	functions_query = ['']*7
 
 	functions_query[0] = """
 		-- Quantity Committed
@@ -722,8 +692,39 @@ def create_functions(conn,companycode):
 
 	# for function_query in functions_query:
 	# 	print('function_query',function_query) #DEBUG
-
 	functions_query[3] = """
+	    -- Quantity Sold Last year
+	    CREATE OR REPLACE FUNCTION public.sd_qs_prev_yr(
+	    	pid integer,
+	    	start_date date,
+	    	end_date date)
+	        RETURNS numeric
+	        LANGUAGE 'sql'
+
+	        COST 100
+	        VOLATILE
+	    AS $BODY$
+
+	    SELECT
+	    	CASE
+	        	WHEN sum(stock_move.product_qty) != 0 THEN sum(stock_move.product_qty) ELSE 0 END AS on_order_total
+	    FROM stock_move
+	    WHERE
+	    	stock_move.location_dest_id = 9
+	        AND stock_move.location_id = 12
+	        AND (stock_move.state::text = 'done'::character varying)
+	        AND date_expected >= ($2 - interval '1 year') --start_date
+	        AND date_expected < ($3 - interval '1 year') --end_date
+	        AND stock_move.product_id = $1
+	    GROUP BY stock_move.product_id
+
+	    $BODY$;
+
+	    ALTER FUNCTION public.sd_qs(integer, date, date)
+	        OWNER TO {login};
+	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+
+	functions_query[4] = """
 		-- Quantity on hand
 		CREATE OR REPLACE FUNCTION sd_qoh(pid int) RETURNS decimal AS
 		$$
@@ -752,7 +753,7 @@ def create_functions(conn,companycode):
 	# for function_query in functions_query:
 	# 	print('function_query',function_query) #DEBUG
 
-	functions_query[4] = """
+	functions_query[5] = """
 		-- Quantity on hand expected
 		CREATE OR REPLACE FUNCTION public.sd_expected_onhand( pid integer, start_date date) RETURNS numeric
 		LANGUAGE 'sql'
@@ -767,7 +768,7 @@ def create_functions(conn,companycode):
 	# for function_query in functions_query:
 	# 	print('function_query',function_query) #DEBUG
 
-	functions_query[5] = """
+	functions_query[6] = """
 		-- Sales trend
 		CREATE OR REPLACE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
 		$$
