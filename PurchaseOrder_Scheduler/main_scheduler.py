@@ -126,6 +126,11 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				print(log_str)
 				log_entry(logfilename, log_str+'\n'+str(e))
 				raise
+		elif order_type == 'H':
+			lead_time = int(config[companycode]['lead_normal'])
+			initial_regular_ship_date = now
+			forecast_window_limit = 2 #weeks
+			forecast_window_limit_date = now + datetime.timedelta(weeks = 2)
 
 		try:
 			vendor_parent = vendor[1]
@@ -759,7 +764,7 @@ def create_functions(conn,companycode):
 		LANGUAGE 'sql'
 		COST 100
 		VOLATILE AS $BODY$
-		SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'3 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs_prev_yr($1,now()::date,$2),sd_qcomm($1,now()::date,$2)),0));
+		SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'3 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs_prev_yr($1,(now()::date- '3 months'::interval,$2),sd_qcomm($1,now()::date,$2)),0));
 		$BODY$;
 
 		ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO {login};
