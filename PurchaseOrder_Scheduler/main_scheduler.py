@@ -758,7 +758,7 @@ def create_functions(conn,companycode):
 		LANGUAGE 'sql'
 		COST 100
 		VOLATILE AS $BODY$
-		SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'6 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs($1,now()::date,$2),sd_qcomm($1,(now()-'6 months'::interval)::date,$2)),0));
+		SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'3 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs_prev_yr($1,now()::date,$2),sd_qcomm($1,(now()-'3 months'::interval)::date,$2)),0));
 		$BODY$;
 
 		ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO {login};
@@ -792,7 +792,7 @@ def create_functions(conn,companycode):
 
 		AS $BODY$
 
-		SELECT GREATEST(sd_qs($1,$4,$5),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+		SELECT GREATEST(sd_qs_prev_yr($1,$4,$5),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
 
 		$BODY$;
 
