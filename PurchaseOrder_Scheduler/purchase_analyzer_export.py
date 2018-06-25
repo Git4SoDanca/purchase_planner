@@ -53,15 +53,7 @@ for product in product_list:
 		now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 39)).strftime('%Y-%m-%d')
 
 
-		quantities_query = """SELECT
-			COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0),
-			COALESCE(sd_qoo({0},'{3}','{1}'),0),
-			COALESCE(sd_qoo({0},'{1}','{2}'),0),
-			COALESCE(sd_qcomm({0},'{1}','{2}'),0),
-			COALESCE(sd_qs({0},'{4}','{5}'),0),
-			COALESCE(sd_expected_onhand({0},'{1}'),0),
-			COALESCE(sd_qoh({0}),0),
-			COALESCE(sd_sales_trend({0}),0)""".format(pid, start_date, end_date, now_minus_6mo, start_prev_year, end_prev_year)
+		quantities_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qs({0},'{4}','{5}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(pid, start_date, end_date, now_minus_6mo, start_prev_year, end_prev_year)
 		cur2.execute(quantities_query)
 		conn.commit()
 		qq_list = cur2.fetchall()
