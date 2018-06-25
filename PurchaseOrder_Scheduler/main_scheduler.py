@@ -331,7 +331,7 @@ def drop_results_table(conn, companycode):
 	cur.close()
 
 def create_tables(conn, companycode):
-	print("In create_tables") #DEBUG
+	#print("In create_tables") #DEBUG
 	table_queries = ['']*2
 	table_queries[0] = """
 		DROP TABLE IF EXISTS sodanca_stock_control;
@@ -516,7 +516,7 @@ def create_tables(conn, companycode):
 		WHERE product_product.id = sodanca_stock_control.id;
 	""".format(grade_a_margin = config[companycode]['grade_a_margin'], grade_b_margin = config[companycode]['grade_b_margin'], grade_c_margin = config[companycode]['grade_c_margin'], min_inv_time_a = config[companycode]['min_inv_time_a'], max_inv_time_a = config[companycode]['max_inv_time_a'], min_inv_time_b = config[companycode]['min_inv_time_b'], max_inv_time_b = config[companycode]['max_inv_time_b'], min_inv_time_c = config[companycode]['min_inv_time_c'], max_inv_time_c = config[companycode]['max_inv_time_c'], min_inv_time_d = config[companycode]['min_inv_time_d'], max_inv_time_d = config[companycode]['max_inv_time_d'], categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'], categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'], login=config[companycode]['login'], mod_a_ba=config[companycode]['a_ba'],mod_b_ba=config[companycode]['b_ba'],mod_a_ch=config[companycode]['a_ch'],mod_b_ch=config[companycode]['b_ch'],mod_a_jz=config[companycode]['a_jz'],mod_b_jz=config[companycode]['b_jz'])
 
-	print(table_queries[0])
+	#print(table_queries[0])
 	table_queries[1] = """
 		-- Create purchase plan table to be used by POG
 		DROP TABLE IF EXISTS public.sodanca_purchase_plan;
@@ -579,7 +579,7 @@ def create_tables(conn, companycode):
 				# customers = config[companycode]['customers'],
 				# supplier = config[companycode]['supplier'],
 				login=config[companycode]['login'])
-	print(table_queries[0])
+	#print(table_queries[0]) #DEBUG
 	logfilename = config[companycode]['logfilename']
 	try:
 		cur = conn.cursor()
@@ -587,7 +587,6 @@ def create_tables(conn, companycode):
 			cur.execute(table_query)
 			conn.commit()
 		cur.close()
-		print("sodanca_stock_control created successfully.")
 		log_entry(logfilename,"sodanca_stock_control created successfully.")
 	except Exception as e:
 		log_entry(logfilename, 'Error creating sodanca_stock_control. ERR:008')
@@ -755,8 +754,7 @@ def create_functions(conn,companycode):
 		ALTER FUNCTION public.sd_qoh(integer) OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	# for function_query in functions_query:
-	print('functions_query[4]',functions_query[4]) #DEBUG
+	#print('functions_query[4]',functions_query[4]) #DEBUG
 
 	functions_query[5] = """
 		-- Quantity on hand expected
@@ -770,8 +768,7 @@ def create_functions(conn,companycode):
 		ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	# for function_query in functions_query:
-	print('functions_query[5]',functions_query[5]) #DEBUG
+	#print('functions_query[5]',functions_query[5]) #DEBUG
 
 	functions_query[6] = """
 		-- Sales trend
@@ -786,7 +783,7 @@ def create_functions(conn,companycode):
 		CREATE OR REPLACE FUNCTION public.sd_quantity_to_order(
 			pid integer,
 			start_date date,
-			end_date date,
+			end_date date
 		)
 		    RETURNS numeric
 		    LANGUAGE 'sql'
@@ -804,12 +801,13 @@ def create_functions(conn,companycode):
 			OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 	#config[companycode]['login']
-	# for function_query in functions_query:
-	print('function_query[6]',function_query[6]) #DEBUG
+	#print('functions_query[6]',functions_query[6]) #DEBUG
 	logfilename = config[companycode]['logfilename']
 	try:
 		cur = conn.cursor()
 		for function_query in functions_query:
+			#print('--'*120)
+			#print(function_query) #DEBUG
 			cur.execute(function_query)
 			conn.commit()
 		cur.close()
