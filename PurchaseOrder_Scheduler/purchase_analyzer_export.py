@@ -63,6 +63,7 @@ for product in product_list:
 			COALESCE(sd_qoh({0}),0),
 			COALESCE(sd_sales_trend({0}),0)""".format(pid, start_date, end_date, now_minus_6mo, start_prev_year, end_prev_year)
 		cur2.execute(quantities_query)
+		conn.commit()
 		qq_list = cur2.fetchall()
 		for qq_each in qq_list:
 			fileout.write("{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12}\n".format(pid,pname,start_date,end_date,qq_each[0],qq_each[1],qq_each[2],qq_each[3],qq_each[4],qq_each[5],qq_each[6],qq_each[7],quantities_query))
