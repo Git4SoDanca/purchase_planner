@@ -359,7 +359,7 @@ CREATE OR REPLACE FUNCTION public.sd_expected_onhand( pid integer, start_date da
 LANGUAGE 'sql'
 COST 100
 VOLATILE AS $BODY$
-SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'6 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs($1,now()::date,$2),sd_qcomm($1,(now()-'6 months'::interval)::date,$2)),0));
+SELECT (sd_qoh($1)+COALESCE(sd_qoo($1,(now()-'6 months'::interval)::date,$2),0)-COALESCE(GREATEST(sd_qs_prev_yr($1,now()::date,$2),sd_qcomm($1,(now()-'6 months'::interval)::date,$2)),0));
 
 
 $BODY$;
@@ -378,8 +378,6 @@ CREATE OR REPLACE FUNCTION public.sd_quantity_to_order(
 	pid integer,
 	start_date date,
 	end_date date,
-  start_date_prevyr date,
-	end_date_prevyr date
 )
     RETURNS numeric
     LANGUAGE 'sql'
@@ -389,9 +387,10 @@ CREATE OR REPLACE FUNCTION public.sd_quantity_to_order(
 
 AS $BODY$
 
-SELECT GREATEST(sd_qs($1,$4,$5),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+SELECT GREATEST(sd_qs_prev_yr($1,$2,$3),sd_qcomm($1,$2,$3))-COALESCE(sd_qoo($1,$2,$3),0)+COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+
 
 $BODY$;
 
-ALTER FUNCTION public.sd_quantity_to_order(integer, date, date, date, date)
+ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
     OWNER TO purchase_planner;

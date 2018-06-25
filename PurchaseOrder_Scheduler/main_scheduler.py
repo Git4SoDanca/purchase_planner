@@ -787,8 +787,6 @@ def create_functions(conn,companycode):
 			pid integer,
 			start_date date,
 			end_date date,
-		  start_date_prevyr date,
-			end_date_prevyr date
 		)
 		    RETURNS numeric
 		    LANGUAGE 'sql'
@@ -798,11 +796,11 @@ def create_functions(conn,companycode):
 
 		AS $BODY$
 
-		SELECT GREATEST(sd_qs_prev_yr($1,$4,$5),sd_qcomm($1,$2,$3))+COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+		SELECT GREATEST(sd_qs_prev_yr($1,$2,$3),sd_qcomm($1,$2,$3))-COALESCE(sd_qoo($1,$2,$3),0)-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
 
 		$BODY$;
 
-		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date, date, date)
+		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
 			OWNER TO {login};
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 	#config[companycode]['login']
