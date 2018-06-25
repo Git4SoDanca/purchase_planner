@@ -10,14 +10,14 @@ class reg(object):
 			setattr(self, attr, val)
 
 try:
-	conn = psycopg2.connect("dbname='OE-Prod-USA-D1-OLD' host='192.168.100.70' user='purchase_planner' password='wy92ugzE98yz'")
+	conn = psycopg2.connect("dbname='OE-Prod-USA-D1' host='192.168.100.70' user='purchase_planner' password='wy92ugzE98yz'")
 	conn.set_session(autocommit=True)
 
 
 except:
 	print("I am unable to connect to the database")
 
-fileout = open('purchase_export.csv','w')
+fileout = open('purchase_export.txt','w')
 cursor_dates = conn.cursor()
 cur = conn.cursor()
 cur2 = conn.cursor()
