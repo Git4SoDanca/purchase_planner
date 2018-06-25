@@ -249,7 +249,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1],
 					prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
 
-					print(insert_query)
+					# print(insert_query)
 
 					try:
 						cur2.execute(insert_query)
