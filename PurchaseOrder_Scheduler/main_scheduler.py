@@ -756,7 +756,7 @@ def create_functions(conn,companycode):
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
 	# for function_query in functions_query:
-	print('function_query[4]',function_query[4]) #DEBUG
+	print('functions_query[4]',functions_query[4]) #DEBUG
 
 	functions_query[5] = """
 		-- Quantity on hand expected
@@ -771,7 +771,7 @@ def create_functions(conn,companycode):
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
 	# for function_query in functions_query:
-	print('function_query[5]',function_query[5]) #DEBUG
+	print('functions_query[5]',functions_query[5]) #DEBUG
 
 	functions_query[6] = """
 		-- Sales trend
