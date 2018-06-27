@@ -31,7 +31,7 @@ def roundup(x,y):
 def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 	sub_cur = conn.cursor()
 	schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
-	print(schedule_query)
+	# print(schedule_query)
 	logfilename = config[companycode]['logfilename']
 	try:
 		# print(schedule_query)
@@ -79,8 +79,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 	now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 26)).strftime('%Y-%m-%d')
 	# print(now, now_minus_6mo)
 
-	print("Starting run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-	log_entry(logfilename,"Starting run -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+	log_str = "Starting run -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+	log_entry(logfilename,log_str)
 
 	vendor_array = list()
 
@@ -160,7 +160,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		# print(vendor)
 
 		try:
-			print(product_list_query)
+			# print(product_list_query)
 			cur.execute(product_list_query)
 			product_count = cur.rowcount
 			product_list = cur.fetchall()
@@ -204,8 +204,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					cur.execute(qto_query) #cur3
 					product_qto = cur.fetchall()
 					if product_qto[0][0] > 0:
-						print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
-						print("Quantity to order: {0}".format(product_qto[0][0])) # DEBUG
+						# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
+						# print("Quantity to order: {0}".format(product_qto[0][0])) # DEBUG
 
 				except Exception:
 					log_entry(logfilename,"I can't execute query. ERR:003\n")
@@ -261,9 +261,11 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 	cur.close()
 	cur2.close()
+	now_finish = datetime.datetime.now()
+	run_time = now_finish-now
+	log_str="Ending run   -- order_type: {0} Grade: {1} - {2}\nRun time: {3}".format(order_type, product_grade, (now_finish.strftime('%H:%M:%S - %Y-%m-%d')), run_time.strftime('%H:%M:%S'))
 
-	print("Ending run   -- order_type: {0} Grade: {1} - {2}".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-	log_entry(logfilename,"Ending run   -- order_type: {0} Grade: {1} - {2}\n".format(order_type, product_grade, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+	log_entry(logfilename,log_str)
 
 def drop_results_table(conn, companycode):
 
