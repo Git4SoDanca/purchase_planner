@@ -263,7 +263,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 	cur2.close()
 	now_finish = datetime.datetime.now()
 	run_time = now_finish-now
-	log_str="Ending run   -- order_type: {0} Grade: {1} - {2}\nRun time: {3}".format(order_type, product_grade, (now_finish.strftime('%H:%M:%S - %Y-%m-%d')), run_time.strftime('%H:%M:%S'))
+	log_str="Ending run   -- order_type: {0} Grade: {1} - {2}\nRun time: {3}".format(order_type, product_grade, (now_finish.strftime('%H:%M:%S - %Y-%m-%d')), str(run_time))
 
 	log_entry(logfilename,log_str)
 
