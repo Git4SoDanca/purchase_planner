@@ -191,6 +191,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
 				start_date = pdate.strftime('%Y-%m-%d')
 				# print('DEBUG - Top of pdate loop:',start_date)
+				now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 				end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 				start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
 				end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
@@ -217,7 +218,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				if product_qto[0][0] > 0: ### Production
 				# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
-					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{1}','{2}'),0), COALESCE(sd_qs({0},'{4}','{5}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, start_prev_year, end_prev_year)
+					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{4}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
 					#Still missing box_capacity which should come here maybe as a function or a query
 					# print(prod_details_query)
 					try:
