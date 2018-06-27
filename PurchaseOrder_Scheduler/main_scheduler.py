@@ -39,7 +39,7 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 
 	except Exception as e:
 		log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-		print(log_str)
+
 		log_entry(logfilename, log_str+'\n'+str(e))
 		raise
 
@@ -55,7 +55,7 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 
 	except Exception as e:
 		log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-		print(log_str)
+
 		log_entry(logfilename, log_str+'\n'+str(e))
 		raise
 
@@ -123,7 +123,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 			except Exception as e:
 				log_str = 'Cannot define rush window dates. ERR:011 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-				print(log_str)
+
 				log_entry(logfilename, log_str+'\n'+str(e))
 				raise
 		elif order_type == 'H':
@@ -203,7 +203,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 					cur.execute(qto_query) #cur3
 					product_qto = cur.fetchall()
-					if product_qto[0][0] > 0:
+					# if product_qto[0][0] > 0:
 						# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
 						# print("Quantity to order: {0}".format(product_qto[0][0])) # DEBUG
 
@@ -324,10 +324,11 @@ def drop_results_table(conn, companycode):
 		cur.execute(clear_table_query)
 		conn.commit()
 		cur.close()
-		print("sodanca_purchase_plan was dropped.")
+		log_str="sodanca_purchase_plan was dropped."
+		log_entry(logfilename, log_str)
 	except Exception:
-		print(conn.notices)
-		log_entry(logfilename,"Cannot clear sodanca_purchase_plan. ERR:000\n")
+		log_str = "Cannot clear sodanca_purchase_plan. ERR:000\n{0}".format(conn.notices)
+		log_entry(logfilename,log_str)
 		pass
 
 	cur.close()
@@ -878,7 +879,7 @@ def parse_attachments(conn, companycode):
 	except Exception as e:
 		now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 		log_str = "Cannot drop table sodanca_pp_barcode_audit. ERR:102 {0}\n\n{1}".format(now, str(e))
-		print(log_str)
+
 		log_entry(logfilename, log_str)
 
 	if num_tables == None:
@@ -909,7 +910,7 @@ def parse_attachments(conn, companycode):
 		except Exception as e:
 			now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 			log_str = "Cannot create table sodanca_estoque_pulmao. ERR:012 {1} \n {0}".format(str(e), now)
-			print(log_str)
+
 			log_entry(logfilename,log_str)
 
 	for fn in os.listdir('attachments'):
@@ -934,7 +935,7 @@ def parse_attachments(conn, companycode):
 					# print(product_barcode, line)
 					now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 					log_str = '{2} Barcode not defined in database barcode {0}, product details {1}'.format(product_barcode, line, now)
-					# print(log_str)
+
 					description = line[0]+line[1]+line[2]+line[3]+line[4]+line[5]
 					insert_query = "INSERT INTO sodanca_pp_barcode_audit (barcode, product_description) VALUES ({0},{1})".format(product_barcode,description)
 					# log_entry(logfilename,log_str)
@@ -953,7 +954,7 @@ def parse_attachments(conn, companycode):
 			except Exception as e:
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error inserting in sodanca_estoque_pulmao. ERR:103 {0}\n\n{1}".format(now, str(e))
-				print(log_str)
+
 				log_entry(logfilename, log_str)
 				pass
 		fileobj.close()
@@ -1049,7 +1050,6 @@ def create_hotstock_order(conn, companycode):
 			except Exception as e:
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error updating orders with hot stock quantities. ERR:108 {0}\n\n{1}".format(now, str(e))
-				print(log_str)
 				log_entry(logfilename, log_str)
 
 			try:
@@ -1064,7 +1064,6 @@ def create_hotstock_order(conn, companycode):
 			except Exception as e:
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error updating orders with hot stock quantities. ERR:109 {0}\n\n{1}".format(now, str(e))
-				print(log_str)
 				log_entry(logfilename, log_str)
 
 			try:
@@ -1078,7 +1077,6 @@ def create_hotstock_order(conn, companycode):
 			except Exception as e:
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error updating orders with hot stock quantities. ERR:110 {0}\n\n{1}".format(now, str(e))
-				print(log_str)
 				log_entry(logfilename, log_str)
 			#     insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
 			#         product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
@@ -1108,7 +1106,6 @@ def create_hotstock_order(conn, companycode):
 			# except Exception as e:
 			#     now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 			#     log_str = "Error updating orders with hot stock quantities. ERR:104 {0}\n\n{1}".format(now, str(e))
-			#     print(log_str)
 			#     log_entry(logfilename, log_str)
 		elif pp_q2o <= ep_qa:
 			try:
@@ -1131,7 +1128,6 @@ def create_hotstock_order(conn, companycode):
 			except Exception as e:
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error updating orders with hot stock quantities. ERR:105 {0}\n\n{1}".format(now, str(e))
-				print(log_str)
 				log_entry(logfilename, log_str)
 				raise
 
@@ -1147,7 +1143,6 @@ def create_hotstock_order(conn, companycode):
 			except Exception as e:
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error updating orders with hot stock quantities. ERR:106 {0}\n\n{1}".format(now, str(e))
-				print(log_str)
 				log_entry(logfilename, log_str)
 				raise
 
@@ -1162,7 +1157,6 @@ def create_hotstock_order(conn, companycode):
 			except Exception as e:
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error updating orders with hot stock quantities. ERR:107 {0}\n\n{1}".format(now, str(e))
-				print(log_str)
 				log_entry(logfilename, log_str)
 				raise
 
@@ -1292,7 +1286,6 @@ def run_all(conn , companycode):
 
 	except Exception as e:
 		log_str = "Something unexpected happened. ERR:007\n\n"+str(e)
-		print(log_str)
 		log_entry(logfilename,log_str)
 		raise
 		pass
@@ -1388,20 +1381,19 @@ def manual_run():
 		log_str = ('Manual run started - Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 		start_clock = datetime.datetime.now()
 		log_entry(config[companycode]['logfilename'],log_str)
-		print(log_str)
 
 		run_all(conn,companycode)
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		print('Runtime: ',str(datetime.datetime.now()- start_clock))
+		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 		log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
 		create_hotstock_order(conn, companycode)
-		print('Runtime: ',str(datetime.datetime.now()- start_clock))
+		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
@@ -1443,7 +1435,6 @@ def manual_run():
 		log_str = ('Manual run started - Running only {0} grade and all order types - started at:{1}').format(run_grade,(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 		start_clock = datetime.datetime.now()
 		log_entry(config[companycode]['logfilename'],log_str)
-		print(log_str)
 
 		for order_type in types_list:
 		#     if order_type == 'N':  # DELETE IF NOT NEEDED
@@ -1505,7 +1496,6 @@ def manual_run():
 			log_str = ('Manual run started - Running all grades and only order type {0} - started at:{1}').format(order_type,(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 			start_clock = datetime.datetime.now()
 			log_entry(config[companycode]['logfilename'],log_str)
-			print(log_str)
 
 			for grade in grades_list:
 			#     if order_type == 'N': #DELETE IF NOT NEEDED
@@ -1515,7 +1505,6 @@ def manual_run():
 
 				if grade in ['C','D'] and order_type == 'N':
 					log_str = 'Skipping order grade {0}, type {1} - {2}'.format(grade, order_type, datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-					print(log_str)
 					log_entry(logfilename,log_str)
 				else:
 					create_order(conn, order_type, grade, plan_period[grade], companycode)
@@ -1588,7 +1577,7 @@ def manual_run():
 		# log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 		# start_clock = datetime.datetime.now()
 		# log_entry(config[companycode]['logfilename'],log_str)
-		# print(log_str)
+
 		#
 		# create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 		#
@@ -1602,7 +1591,6 @@ def manual_run():
 		if order_type in ['R','N']:
 			log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 			log_entry(config[companycode]['logfilename'],log_str)
-			print(log_str)
 			# print(order_type)
 			create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
@@ -1623,7 +1611,6 @@ def manual_run():
 
 	else:
 		log_str="{} Something went wrong. ERR:010".format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-		print(log_str)
 		log_entry(logfilename,log_str)
 
 def install_update():
@@ -1668,14 +1655,14 @@ def install_update():
 	passwd = config[companycode]['passwd']
 
 	logfilename = config[companycode]['logfilename']#'purchase_planner.log'
-	print(logfilename) #DEBUG
+	# print(logfilename) #DEBUG
 	try:
 
 		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-		#print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		# print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		create_functions(conn, companycode)
 		create_tables(conn, companycode)
 
@@ -1700,22 +1687,22 @@ def main(companycode):
 		dsn = ("dbname={0} host={1} user={2} password={3}").format(dbname, db_server_address, login, passwd)
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
-		#print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		# print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
 		drop_results_table(conn,companycode)
 		log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 		start_clock = datetime.datetime.now()
 		log_entry(config[companycode]['logfilename'],log_str)
-		print(log_str)
+
 		run_all(conn, companycode)
-		print('Runtime: ',str(datetime.datetime.now()- start_clock))
+		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 
 	except Exception as e:
 		log_str = "I am unable to connect to the database ERR:101\n\n"+ str(e)
-		print(logfilename,log_str)
+		# print(logfilename,log_str)
 		log_entry(logfilename,log_str)
 
 
