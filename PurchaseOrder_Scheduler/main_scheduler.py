@@ -861,7 +861,7 @@ def create_functions(conn,companycode):
 		    OWNER TO {login};
 	""".format(login = config[companycode]['login'])
 
-	function_query[8] = """
+	functions_query[8] = """
 		CREATE OR REPLACE FUNCTION sd_update_pplan_date(sdate date default '1970-01-01' ) RETURNS integer AS $BODY$
 		DECLARE
 			a_count integer;
@@ -884,7 +884,7 @@ def create_functions(conn,companycode):
 		LANGUAGE plpgsql VOLATILE
 		ALTER FUNCTION public.sd_update_pplan_date(date)
 		    OWNER TO {login};
-	""".format()
+	""".format(login = config[companycode]['login'])
 
 			#config[companycode]['login']
 			#print('functions_query[6]',functions_query[6]) #DEBUG
@@ -1717,10 +1717,16 @@ def install_update():
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-		# print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		print('Creating functions')
 		create_functions(conn, companycode)
+		print('Functions created')
+		print('Creating tables')
 		create_tables(conn, companycode)
+		print('Tables created')
+		print('Checking if ship date exists.')
 		ship_date = check_ship_date(conn, companycode)
+		print('Ship date {0}').format(ship_date)
 		cur = conn.cursor()
 		if ship_date == 0:
 			print('There is no ship date defined')
