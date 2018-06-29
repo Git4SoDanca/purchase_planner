@@ -129,8 +129,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		elif order_type == 'H':
 			lead_time = int(config[companycode]['lead_normal'])
 			initial_regular_ship_date = now
-			forecast_window_limit = 2 #weeks
-			forecast_window_limit_date = now + datetime.timedelta(weeks = 2)
+			forecast_window_limit = 1 #weeks
+			forecast_window_limit_date = now + datetime.timedelta(weeks = 1)
 
 		try:
 			vendor_parent = vendor[1]
@@ -188,77 +188,88 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 			# print(product)
 			# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
-			for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
-				start_date = pdate.strftime('%Y-%m-%d')
-				# print('DEBUG - Top of pdate loop:',start_date)
-				now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
-				end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
-				start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
-				end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+			# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
+			## TODO need to redefine pdate
+			start_date = initial_regular_ship_date # pdate.strftime('%Y-%m-%d')
+			# print('DEBUG - Top of pdate loop:',start_date)
+			now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
+			end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+			start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
+			end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+
+			if order_type == 'R' AND product_grade in ['C','D'] :
+				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+			elif order_type == 'N' AND product_grade == 'C':
+				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0),COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+			else:
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
-				# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
-				# log_entry(logfilename,log_str)
-				# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
+			# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
+			# log_entry(logfilename,log_str)
+			# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
+			cur.execute(qto_query) #cur3
+
+			try:
+
 				cur.execute(qto_query) #cur3
+				product_qto = cur.fetchall()
+				# if product_qto[0][0] > 0:
+					# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
+					# print("Quantity to order: {0}".format(product_qto[0][0])) # DEBUG
 
+			except Exception:
+				log_entry(logfilename,"I can't execute query. ERR:003\n")
+				raise Exception
+				pass
+
+			if product_grade == 'C' and order_type == 'N' and product_qto[0][0]<3:
+				product_qto[0][0] = 0
+			elif product_grade == 'C' and order_type == 'N' and product_qto[0][1] > 0:
+				product_qto[0][0] = product_qto[0][1]
+
+			# if 1: ### TEST
+			if product_qto[0][0] > 0: ### Production
+			# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
+
+				prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{4}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
+				#Still missing box_capacity which should come here maybe as a function or a query
+				# print(prod_details_query)
 				try:
+					cur.execute(prod_details_query) #cur3
+					prod_details = cur.fetchall()
+					# Rounding qty to order
+					qto_rounded = roundup(prod_details[0][0],order_mod)
 
-					cur.execute(qto_query) #cur3
-					product_qto = cur.fetchall()
-					# if product_qto[0][0] > 0:
-						# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
-						# print("Quantity to order: {0}".format(product_qto[0][0])) # DEBUG
-
+					# print(product_template_name, product_name, product_grade, qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
+					# print(prod_details)
 				except Exception:
-					log_entry(logfilename,"I can't execute query. ERR:003\n")
+					log_entry(logfilename,"I can't execute query. ERR:004\n")
 					raise Exception
 					pass
 
-				# if 1: ### TEST
-				if product_qto[0][0] > 0: ### Production
-				# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
+				if vendor_parent != 0:
+					product_vendor = vendor_parent
+					product_group = vendor[0]
+				else:
+					product_vendor = vendor[0]
+					product_group = vendor[0]
 
-					prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{4}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
-					#Still missing box_capacity which should come here maybe as a function or a query
-					# print(prod_details_query)
-					try:
-						cur.execute(prod_details_query) #cur3
-						prod_details = cur.fetchall()
-						# Rounding qty to order
-						qto_rounded = roundup(prod_details[0][0],order_mod)
+				# qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
+				# print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
 
-						# print(product_template_name, product_name, product_grade, qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
-						# print(prod_details)
-					except Exception:
-						log_entry(logfilename,"I can't execute query. ERR:004\n")
-						raise Exception
-						pass
+				insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
+				product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
+				expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
+				'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date,
+				product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1],
+				prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
 
-					if vendor_parent != 0:
-						product_vendor = vendor_parent
-						product_group = vendor[0]
-					else:
-						product_vendor = vendor[0]
-						product_group = vendor[0]
+				# print(insert_query)
+				try:
+					cur2.execute(insert_query)
+					conn.commit()
 
-					# qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5])
-					# print(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date, product_template_id, product_id, product_grade, order_mod, product_qto[0][0],
-
-					insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
-					product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
-					expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
-					'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date,
-					product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1],
-					prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
-
-					# print(insert_query)
-
-					try:
-						cur2.execute(insert_query)
-						conn.commit()
-
-					except Exception:
-						log_entry(logfilename,"Cannot insert results. ERR:005\n")
+				except Exception:
+					log_entry(logfilename,"Cannot insert results. ERR:005\n")
 
 
 	cur.close()
@@ -804,6 +815,28 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
 			OWNER TO {login};
+
+		-- Quantity to order - Purchase planner
+		CREATE OR REPLACE FUNCTION public.sd_quantity_to_order_no_hist(
+			pid integer,
+			start_date date,
+			end_date date
+		)
+		    RETURNS numeric
+		    LANGUAGE 'sql'
+
+		    COST 100
+		    VOLATILE
+
+		AS $BODY$
+
+		SELECT GREATEST(sd_qcomm($1,$2,$3))-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+
+		$BODY$;
+
+		ALTER FUNCTION public.sd_quantity_to_order_no_hist(integer, date, date)
+			OWNER TO {login};
+
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 	#config[companycode]['login']
 	#print('functions_query[6]',functions_query[6]) #DEBUG
@@ -962,9 +995,9 @@ def parse_attachments(conn, companycode):
 		fileobj.close()
 	cur.close()
 
-def next_shipping_date():
+def  next_shipping_date(weekday_ship): #weekday number Monday is 0 Sunday is 6
 	now = datetime.datetime.now()
-	weekday_ship = 4
+	# weekday_ship = 4
 	now_weekday = int(now.strftime('%w'))
 	# print('DEBUG weekday',now_weekday)
 	# if now_weekday <= 2: #Monday or Tuesday
@@ -1007,7 +1040,7 @@ def create_hotstock_order(conn, companycode):
 		ep_qa = hs_line[5]
 		pp_lin_id = hs_line[6]
 		ep_lin_id = hs_line[0]
-		expected_date = next_shipping_date()
+		expected_date = next_shipping_date(4)
 		vendor = hs_line[11]
 		vendor_group = hs_line[12]
 		creation_date = now_date
@@ -1164,65 +1197,6 @@ def create_hotstock_order(conn, companycode):
 
 	cur.close()
 
-	# hotstock_query = 'SELECT * FROM sodanca_estoque_pulmao WHERE email_date = (SELECT MAX(email_date) FROM sodanca_estoque_pulmao)'
-	# cur = conn.cursor()
-	#
-	# now =  datetime.datetime.now()
-	# try:
-	#     cur.execute(hotstock_query)
-	#     hs_lines = cur.fetchall()
-	# except Exception as e:
-	#     raise
-	#
-	# for hs_line in hs_lines:
-	#     product_id = hs_line[2]
-	#     qty_in_hotstock = hs_line[5]
-	#     check_order = "SELECT * FROM sodanca_purchase_plan WHERE type = 'R' AND product_id = {0} ORDER BY expected_date LIMIT 1".format(product_id)
-	#
-	#     # print(check_order)
-	#     try:
-	#         cur.execute(check_order)
-	#         order_result = cur.fetchall()
-	#         resultcount = len(order_result)
-	#         # print('DEBUG resultcount:', resultcount)
-	#         # print('DEBUG order_result:',order_result)
-	#         if resultcount > 0:
-	#             for order in order_result:
-	#                 qty_2_ord = order[13]
-	#                 line_id = order[0]
-	#                 order_mod = order[12]
-	#
-	#                 print('DEBUG ',order[9],order[13], qty_in_hotstock)
-	#                 if (qty_2_ord > 0 and qty_in_hotstock is not None):
-	#                     # print('DEBUG checking var types qty_in_hotstock: {0}  qty_2_ord: {1}'.format(type(qty_in_hotstock), type(qty_2_ord)))
-	#                     if qty_in_hotstock >= qty_2_ord:
-	#                         qty_2_ord = 0
-	#                         qty_2_ord_adj = 0
-	#                         next_shipping_date = next_shipping_date(now)
-	#                         print('DEBUG next_shipping_date:',next_shipping_date)
-	#                         insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
-	#                             product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
-	#                             expected_on_hand, qty_on_hand, sales_trend) VALUES (SELECT nextval('id'), 'H', vendor, vendor_group, creation_date, '{1}', template_id,
-	#                             template_name, product_id, product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period,
-	#                             qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend FROM sodanca_purchase_plan WHERE id = {0})""".format(line_id,next_shipping_date)
-	#
-	#                         print(insert_query)
-	#                         cur.execute(insert_query)
-	#                         conn.commit()
-	#                         update_sql = "UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES (0,0) WHERE id = {}".format(line_id)
-	#                         print(update_sql)
-	#                         cur.execute(update_sql)
-	#                         conn.commit()
-	#
-	#                     elif qty_in_hotstock < qty_2_ord:
-	#                         qty_2_ord = qty_2_ord - qty_in_hotstock
-	#                         qty_2_ord_adj = roundup(qty_2_ord,order_mod)
-	#                         update_sql = "UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES (0,0) WHERE id = {}".format(line_id)
-	#                         print(update_sql)
-	#                 # print(order)
-	#     except Exception as e:
-	#         print(str(e))
-
 ### --------------------------------INTERACTIVE INTERFACE -------------------------------- ###
 
 def main_menu():
@@ -1275,10 +1249,12 @@ def run_all(conn , companycode):
 	try:
 		create_order(conn, 'R', 'A', plan_period_a, companycode)
 		create_order(conn, 'R', 'B', plan_period_b, companycode)
-		create_order(conn, 'N', 'A', plan_period_a, companycode)
-		create_order(conn, 'N', 'B', plan_period_b, companycode)
 		create_order(conn, 'R', 'C', plan_period_c, companycode)
 		create_order(conn, 'R', 'D', plan_period_d, companycode)
+		create_order(conn, 'N', 'A', plan_period_a, companycode)
+		create_order(conn, 'N', 'B', plan_period_b, companycode)
+		create_order(conn, 'N', 'C', plan_period_b, companycode)
+
 
 		create_hotstock_order(conn, companycode)
 
@@ -1295,7 +1271,7 @@ def run_all(conn , companycode):
 def manual_run():
 	# os.system('clear')
 
-	types_list = ['R','N', 'H']
+	types_list = ['R','N','H']
 	grades_list = ['A','B','C','D']
 	print('\nSelect company to to run:')
 
