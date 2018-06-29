@@ -401,3 +401,46 @@ $BODY$;
 
 ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
     OWNER TO purchase_planner;
+
+
+-- Shipment next date
+CREATE OR REPLACE FUNCTION sd_update_pplan_date(sdate date default '1970-01-01' ) RETURNS integer AS $BODY$
+DECLARE
+  a_count integer;
+  b_count integer;
+  c_count integer;
+BEGIN
+  UPDATE sodanca_purchase_plan_date set status = 't' WHERE status ='c';
+  GET DIAGNOSTICS a_count = ROW_COUNT;
+  IF sdate == '1970-01-01' THEN
+    INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (((SELECT ship_date FROM sodanca_purchase_plan_date WHERE status = 't')::date+'1 week'::interval)::date , now(),'c');
+  ELSE
+    INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (sdate, now(),'c');
+  END IF;
+  GET DIAGNOSTICS b_count = ROW_COUNT;
+  UPDATE sodanca_purchase_plan_date set status = 'o' WHERE status ='t';
+  GET DIAGNOSTICS c_count = ROW_COUNT;
+  RETURN a_count+b_count+c_count;
+END
+$BODY$
+LANGUAGE plpgsql VOLATILE
+
+  #config[companycode]['login']
+  #print('functions_query[6]',functions_query[6]) #DEBUG
+  logfilename = config[companycode]['logfilename']
+  try:
+    cur = conn.cursor()
+    for function_query in functions_query:
+      #print('--'*120)
+      #print(function_query) #DEBUG
+      cur.execute(function_query)
+      conn.commit()
+    cur.close()
+    log_entry(logfilename,"Functions created successfully.")
+  except Exception as e:
+    log_entry(logfilename, 'Error creating functions. ERR:009')
+    log_entry(logfilename,str(e))
+    raise
+
+ALTER FUNCTION public.sd_update_pplan_date(date)
+    OWNER TO purchase_planner;

@@ -108,8 +108,12 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		# Setting dates for purchase period calculated dates for normal shipments and queried for rush
 		if order_type == 'N':
 			# print('DEBUG ORDER "R":',vendor, order_type)
+			initial_date_query = "SELECT ship_date WHERE status ='c';"
+			cur.execute(initial_date_query)
+			initial_regular_ship_date = cur.fetchone()
+
 			lead_time = int(config[companycode]['lead_normal'])
-			initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
+			# initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
 			forecast_window_limit = int(config[companycode]['forecast_window_limit_normal']) #weeks
 			forecast_window_limit_date = now + datetime.timedelta(weeks = forecast_window_limit+lead_time)
 
@@ -200,7 +204,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			if order_type == 'R' and product_grade in ['C','D'] :
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			elif order_type == 'N' and product_grade == 'C':
-				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0),COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+				qcomm_query = "SELECT COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			else:
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
@@ -348,7 +353,7 @@ def drop_results_table(conn, companycode):
 
 def create_tables(conn, companycode):
 	#print("In create_tables") #DEBUG
-	table_queries = ['']*2
+	table_queries = ['']*3
 	table_queries[0] = """
 		DROP TABLE IF EXISTS sodanca_stock_control;
 		CREATE TABLE sodanca_stock_control AS
@@ -537,64 +542,59 @@ def create_tables(conn, companycode):
 		-- Create purchase plan table to be used by POG
 		DROP TABLE IF EXISTS public.sodanca_purchase_plan;
 
-		  CREATE TABLE public.sodanca_purchase_plan
-		  (
-			  id SERIAL,
-			  type character(1) COLLATE pg_catalog."default" NOT NULL,
-			  vendor integer NOT NULL,
-			  vendor_group integer,
-			  creation_date date NOT NULL,
-			  expected_date date NOT NULL,
-			  template_id integer NOT NULL,
-			  template_name varchar(64),
-			  product_id integer NOT NULL,
-			  product_name varchar(64),
-			  product_category_id integer,
-			  product_grade character(1) COLLATE pg_catalog."default",
-			  order_mod smallint,
-			  qty_2_ord numeric NOT NULL,
-			  qty_2_ord_adj numeric NOT NULL,
-			  qty_on_order numeric,
-			  qty_on_order_period numeric,
-			  qty_committed numeric,
-			  qty_sold numeric,
-			  expected_on_hand numeric,
-			  qty_on_hand numeric,
-			  sales_trend numeric,
-			  purchase_price numeric,
-			  status character(1) DEFAULT 'N',
-			  --box_capacity integer,
-			  CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
-		  )
-		  WITH (
-			  OIDS = FALSE
-		  )
-		  TABLESPACE pg_default;
-		  ALTER TABLE public.sodanca_purchase_plan
-			  OWNER to {login};
-		  COMMENT ON TABLE public.sodanca_purchase_plan
-			  IS 'Reset nightly, used by stock purchase planner';""".format(
-				# grade_a_margin = config[companycode]['grade_a_margin'],
-				# grade_b_margin = config[companycode]['grade_b_margin'],
-				# grade_c_margin = config[companycode]['grade_c_margin'],
-				# min_inv_time_a = config[companycode]['min_inv_time_a'],
-				# max_inv_time_a = config[companycode]['max_inv_time_a'],
-				# min_inv_time_b = config[companycode]['min_inv_time_b'],
-				# max_inv_time_b = config[companycode]['max_inv_time_b'],
-				# min_inv_time_c = config[companycode]['min_inv_time_c'],
-				# max_inv_time_c = config[companycode]['max_inv_time_c'],
-				# min_inv_time_d = config[companycode]['min_inv_time_d'],
-				# max_inv_time_d = config[companycode]['max_inv_time_d'],
-				# categ_ba = config[companycode]['categ_ba'],
-				# categ_ch = config[companycode]['categ_ch'],
-				# categ_jz = config[companycode]['categ_jz'],
-				# categ_tights = config[companycode]['categ_tights'],
-				# categ_shoes = config[companycode]['categ_shoes'],
-				# categ_dwear = config[companycode]['categ_dwear'],
-				# wh_stock = config[companycode]['wh_stock'],
-				# customers = config[companycode]['customers'],
-				# supplier = config[companycode]['supplier'],
-				login=config[companycode]['login'])
+		CREATE TABLE public.sodanca_purchase_plan
+		(
+		  id SERIAL,
+		  type character(1) COLLATE pg_catalog."default" NOT NULL,
+		  vendor integer NOT NULL,
+		  vendor_group integer,
+		  creation_date date NOT NULL,
+		  expected_date date NOT NULL,
+		  template_id integer NOT NULL,
+		  template_name varchar(64),
+		  product_id integer NOT NULL,
+		  product_name varchar(64),
+		  product_category_id integer,
+		  product_grade character(1) COLLATE pg_catalog."default",
+		  order_mod smallint,
+		  qty_2_ord numeric NOT NULL,
+		  qty_2_ord_adj numeric NOT NULL,
+		  qty_on_order numeric,
+		  qty_on_order_period numeric,
+		  qty_committed numeric,
+		  qty_sold numeric,
+		  expected_on_hand numeric,
+		  qty_on_hand numeric,
+		  sales_trend numeric,
+		  purchase_price numeric,
+		  status character(1) DEFAULT 'N',
+		  --box_capacity integer,
+		  CONSTRAINT sodanca_purchase_plan_pkey PRIMARY KEY (id)
+		)
+		WITH (
+		  OIDS = FALSE
+		)
+		TABLESPACE pg_default;
+		ALTER TABLE public.sodanca_purchase_plan
+		  OWNER to {login};
+		COMMENT ON TABLE public.sodanca_purchase_plan
+		  IS 'Reset nightly, used by stock purchase planner';""".format(
+			login=config[companycode]['login'])
+
+	table_queries[2] = """
+		DROP TABLE IF EXISTS public.sodanca_purchase_plan_date;
+
+		CREATE TABLE public.sodanca_purchase_plan_date (
+		  ship_date date NOT NULL,
+		  gen_tstamp timestamp NOT NULL,
+		  status character(1) NOT NULL
+		)
+		TABLESPACE pg_default;
+		ALTER TABLE public.sodanca_purchase_plan_date
+		  OWNER TO {login};
+		COMMENT ON TABLE public.sodanca_purchase_plan_date
+		  IS 'Updated via function sd_update_pplan_date';
+	""".format(login=config[companycode]['login']))
 	#print(table_queries[0]) #DEBUG
 	logfilename = config[companycode]['logfilename']
 	try:
@@ -610,7 +610,7 @@ def create_tables(conn, companycode):
 		raise
 
 def create_functions(conn,companycode):
-	functions_query = ['']*7
+	functions_query = ['']*9
 
 	functions_query[0] = """
 		-- Quantity Committed
@@ -838,22 +838,71 @@ def create_functions(conn,companycode):
 			OWNER TO {login};
 
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
-	#config[companycode]['login']
-	#print('functions_query[6]',functions_query[6]) #DEBUG
-	logfilename = config[companycode]['logfilename']
-	try:
-		cur = conn.cursor()
-		for function_query in functions_query:
-			#print('--'*120)
-			#print(function_query) #DEBUG
-			cur.execute(function_query)
-			conn.commit()
-		cur.close()
-		log_entry(logfilename,"Functions created successfully.")
-	except Exception as e:
-		log_entry(logfilename, 'Error creating functions. ERR:009')
-		log_entry(logfilename,str(e))
-		raise
+
+	function_query[7] = """
+		DROP FUNCTION sd_update_pplan_date()
+		CREATE OR REPLACE FUNCTION sd_update_pplan_date() RETURNS integer AS $BODY$
+		DECLARE
+			a_count integer;
+			b_count integer;
+			c_count integer;
+		BEGIN
+			UPDATE sodanca_purchase_plan_date set status = 't' WHERE status ='c';
+			GET DIAGNOSTICS a_count = ROW_COUNT;
+			INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (((SELECT ship_date FROM sodanca_purchase_plan_date WHERE status = 't')::date+'1 week'::interval)::date , now(),'c');
+			GET DIAGNOSTICS b_count = ROW_COUNT;
+			UPDATE sodanca_purchase_plan_date set status = 'o' WHERE status ='t';
+			GET DIAGNOSTICS c_count = ROW_COUNT;
+			RETURN a_count+b_count+c_count;
+		END;
+		$BODY$
+		LANGUAGE plpgsql VOLATILE
+		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
+		    OWNER TO {login};
+	""".format(login = config[companycode]['login'])
+
+	function_query[8] = """
+		CREATE OR REPLACE FUNCTION sd_update_pplan_date(sdate date default '1970-01-01' ) RETURNS integer AS $BODY$
+		DECLARE
+			a_count integer;
+			b_count integer;
+			c_count integer;
+		BEGIN
+			UPDATE sodanca_purchase_plan_date set status = 't' WHERE status ='c';
+			GET DIAGNOSTICS a_count = ROW_COUNT;
+			IF sdate == '1970-01-01' THEN
+				INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (((SELECT ship_date FROM sodanca_purchase_plan_date WHERE status = 't')::date+'1 week'::interval)::date , now(),'c');
+			ELSE
+				INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (sdate, now(),'c');
+			END IF;
+			GET DIAGNOSTICS b_count = ROW_COUNT;
+			UPDATE sodanca_purchase_plan_date set status = 'o' WHERE status ='t';
+			GET DIAGNOSTICS c_count = ROW_COUNT;
+			RETURN a_count+b_count+c_count;
+		END
+		$BODY$
+		LANGUAGE plpgsql VOLATILE
+
+			#config[companycode]['login']
+			#print('functions_query[6]',functions_query[6]) #DEBUG
+			logfilename = config[companycode]['logfilename']
+			try:
+				cur = conn.cursor()
+				for function_query in functions_query:
+					#print('--'*120)
+					#print(function_query) #DEBUG
+					cur.execute(function_query)
+					conn.commit()
+				cur.close()
+				log_entry(logfilename,"Functions created successfully.")
+			except Exception as e:
+				log_entry(logfilename, 'Error creating functions. ERR:009')
+				log_entry(logfilename,str(e))
+				raise
+
+		ALTER FUNCTION public.sd_update_pplan_date(date)
+		    OWNER TO {login};
+	""".format()
 
 def add_check_digit(upc_str):
 
@@ -1033,8 +1082,10 @@ def create_hotstock_order(conn, companycode):
 		cur.execute(hotstock_query)
 		hs_lines = cur.fetchall()
 	except Exception as e:
+		log_str = "ERR:114\n" + str(e)
+		log_entry(logfilename, log_str)
 		raise
-
+		sys.exit(1)
 	for hs_line in hs_lines:
 		pp_q2o = hs_line[7]
 		ep_qa = hs_line[5]
@@ -1197,6 +1248,31 @@ def create_hotstock_order(conn, companycode):
 
 	cur.close()
 
+def check_ship_date(conn, companycode):
+	cur = conn.cursor()
+	logfilename = config[companycode]['logfilename']
+
+	check_date_query = "SELECT * FROM sodanca_purchase_plan_date WHERE status = 'c'"
+
+	try:
+		cur.execute(check_date_query)
+		ship_date = cur.fetchall()
+		numdates = cur.numrows()
+		if numrows > 1:
+			log_str = "Something is off, too many current dates ERR:112\n"
+			for sdate in ship_date:
+				log_str += sdate[0]
+			log_entry(logfilename, log_str)
+		elif:
+			cur.close()
+			return ship_date[0][0]
+		else:
+			return 0
+	except Exception as e:
+		log_str = "ERR:113\n" + str(e)
+		log_entry(logfilename, log_str)
+		raise
+		sys.exit(1)
 ### --------------------------------INTERACTIVE INTERFACE -------------------------------- ###
 
 def main_menu():
@@ -1487,23 +1563,23 @@ def manual_run():
 				else:
 					create_order(conn, order_type, grade, plan_period[grade], companycode)
 
-			log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+			log_str = 'Manual run - Completion time: {0}\n'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
-			print('Runtime: ',str(datetime.datetime.now()- start_clock))
-			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+			log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
+			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
 		elif order_type == 'H':
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			print('Runtime: ',str(datetime.datetime.now()- start_clock))
-			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+			log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
+			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
 
 
 	elif run_choice == 's':
 		while True:
-			print('\nSelect product grade to process:')
+			print('\nSelect order type to process:')
 			for order_type in types_list:
 				print(order_type)
 			choice = input(" >> ")
@@ -1643,6 +1719,54 @@ def install_update():
 		# print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		create_functions(conn, companycode)
 		create_tables(conn, companycode)
+		ship_date = check_ship_date(conn, companycode)
+		cur = conn.cursor()
+		if ship_date = 0:
+			print('There is no ship date defined')
+			print('Define current ship date? (y/n)')
+			choice = input(" >> ")
+			ch = choice.lower()
+
+			if ch == 'y':
+				while 1:
+					print('Enter current ship date in "YYYY-MM-DD" format')
+					sdate = input (" >> ")
+					sdate_query = "INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES ('{0}', now(),'c');".format(sdate)
+
+					try:
+						cur.execute(sdate_query)
+						break
+					except Exception as e:
+						log_str = "Could not insert date. Check format is 'YYYY-MM-DD'.\n {0}".format(str(e))
+						log_entry(logfilename,log_str)
+			else:
+				print('Exiting program.')
+				sys.exit(1)
+
+		else:
+			print('Current ship date defined as {0}').format(ship_date)
+			print('Would you like to change it? (y/n)')
+			while 1:
+				choice = input(" >> ")
+				ch = choice.lower()
+				if ch == 'y':
+					print("Enter new ship date in format 'YYYY-MM-DD'")
+					sdate = input(" >> ")
+					sdate_query = "SELECT sd_update_pplan_date({0})".format(sdate)
+					try:
+						cur.execute()
+						break
+					except Exception as e:
+						log_str = "Could not update ship date. Check format is 'YYYY-MM-DD'.\n ERR:115{0}".format(str(e))
+						log_entry(logfilename,log_str)
+						print('Exiting program')
+						sys.exit(1)
+				elif ch == 'n':
+					print('Leaving current ship date as {0}').format(ship_date)
+					print('Exiting program')
+					sys.exit(1)
+				else:
+					print("Please choose (y) or (n)")
 
 
 
