@@ -197,9 +197,9 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
 			end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 
-			if order_type == 'R' AND product_grade in ['C','D'] :
+			if order_type == 'R' and product_grade in ['C','D'] :
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
-			elif order_type == 'N' AND product_grade == 'C':
+			elif order_type == 'N' and product_grade == 'C':
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0),COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			else:
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
