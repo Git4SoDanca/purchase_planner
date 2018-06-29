@@ -594,7 +594,7 @@ def create_tables(conn, companycode):
 		  OWNER TO {login};
 		COMMENT ON TABLE public.sodanca_purchase_plan_date
 		  IS 'Updated via function sd_update_pplan_date';
-	""".format(login=config[companycode]['login']))
+	""".format(login=config[companycode]['login'])
 	#print(table_queries[0]) #DEBUG
 	logfilename = config[companycode]['logfilename']
 	try:
@@ -839,7 +839,7 @@ def create_functions(conn,companycode):
 
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	function_query[7] = """
+	functions_query[7] = """
 		DROP FUNCTION sd_update_pplan_date()
 		CREATE OR REPLACE FUNCTION sd_update_pplan_date() RETURNS integer AS $BODY$
 		DECLARE
@@ -1263,7 +1263,7 @@ def check_ship_date(conn, companycode):
 			for sdate in ship_date:
 				log_str += sdate[0]
 			log_entry(logfilename, log_str)
-		elif:
+		elif numrows == 1:
 			cur.close()
 			return ship_date[0][0]
 		else:
@@ -1721,7 +1721,7 @@ def install_update():
 		create_tables(conn, companycode)
 		ship_date = check_ship_date(conn, companycode)
 		cur = conn.cursor()
-		if ship_date = 0:
+		if ship_date == 0:
 			print('There is no ship date defined')
 			print('Define current ship date? (y/n)')
 			choice = input(" >> ")
