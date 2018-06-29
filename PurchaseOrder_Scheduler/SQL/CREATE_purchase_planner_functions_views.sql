@@ -351,6 +351,10 @@ $$
    FROM stock_move
    WHERE stock_move.product_id = $1
   GROUP BY stock_move.product_id
+
+  ALTER FUNCTION public.sd_qoh(int) OWNER TO purchase_planner;
+
+
 $$ LANGUAGE SQL;
 
 
@@ -371,6 +375,9 @@ ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO purchase_planne
 CREATE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
 $$
 SELECT round(sd_qs($1,(now()-'6 months'::interval)::date, now()::date)/sd_qs($1,(now()- '18 months'::interval)::date,(now()- '12 months'::interval)::date)*100,2) as growth;
+
+ALTER FUNCTION public.sd_sales_trend(integer) OWNER TO purchase_planner;
+
 $$ LANGUAGE SQL;
 
 -- Quantity to order - Purchase planner

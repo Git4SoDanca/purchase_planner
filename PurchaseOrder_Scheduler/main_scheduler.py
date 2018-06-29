@@ -193,9 +193,9 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			start_date = initial_regular_ship_date # pdate.strftime('%Y-%m-%d')
 			# print('DEBUG - Top of pdate loop:',start_date)
 			now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
-			end_date = (pdate + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
-			start_prev_year = (pdate - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
-			end_prev_year = (pdate - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+			end_date = (start_date + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
+			start_prev_year = (start_date - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
+			end_prev_year = (start_date - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 
 			if order_type == 'R' and product_grade in ['C','D'] :
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
