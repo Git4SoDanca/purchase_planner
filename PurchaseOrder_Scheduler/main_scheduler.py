@@ -225,6 +225,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				raise Exception
 				pass
 
+			qto_qval = product_qto[0][0]
+
 			if product_grade == 'C' and order_type == 'N' :
 				# try:
 				# 	cur2.execute(qcomm_query)
@@ -233,7 +235,6 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				# except Exception as e:
 				# 	log_str= 'ERR:116 - Cannot query qcomm for C item'
 
-				qto_qval = product_qto[0][0]
 				qcomm_qval = product_qto[0][1]
 
 				if qto_qval<3 and qcomm_qval == 0:
