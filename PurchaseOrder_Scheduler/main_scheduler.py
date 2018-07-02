@@ -273,7 +273,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					# Rounding qty to order
 
 					min_qty_2_ord_c_grade = config[companycode]['c_min']
-
+					print('DEBUG min_qty_2_ord_c_grade',min_qty_2_ord_c_grade)
 					if product_grade == 'C':
 						if qcomm > qspy:
 							qto_rounded = qcomm
