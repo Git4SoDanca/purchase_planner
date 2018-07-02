@@ -1234,8 +1234,9 @@ def check_ship_date(conn, companycode):
 
 	try:
 		cur.execute(check_date_query)
-		ship_date = cur.fetchall()
 		numdates = cur.rowcount
+		ship_date = cur.fetchall()
+
 		if numrows > 1:
 			log_str = "Something is off, too many current dates ERR:112\n"
 			for sdate in ship_date:
