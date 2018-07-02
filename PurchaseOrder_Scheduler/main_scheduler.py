@@ -226,12 +226,14 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				pass
 
 			if product_grade == 'C' and order_type == 'N' and product_qto[0][0]<3:
-				product_qto[0][0] = 0
+				# product_qto[0][0] = 0
+				qty_2_ord = 0
 			elif product_grade == 'C' and order_type == 'N' and product_qto[0][1] > 0:
-				product_qto[0][0] = product_qto[0][1]
+				# product_qto[0][0] = product_qto[0][1]
+				qty_2_ord = product_qto[0][1]
 
 			# if 1: ### TEST
-			if product_qto[0][0] > 0: ### Production
+			if qty_2_ord > 0: ### Production
 			# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
 				prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{4}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
@@ -240,11 +242,32 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				try:
 					cur.execute(prod_details_query) #cur3
 					prod_details = cur.fetchall()
-					# Rounding qty to order
-					qto_rounded = roundup(prod_details[0][0],order_mod)
 
-					# print(product_template_name, product_name, product_grade, qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
-					# print(prod_details)
+					qto=prod_details[0][0]
+					qoo=prod_details[0][1]
+					qoop=prod_details[0][2]
+					qcomm=prod_details[0][3]
+					qspy=prod_details[0][4]
+					qeoh=prod_details[0][5]
+					qoh=prod_details[0][6]
+					qst=prod_details[0][7]
+
+					# Rounding qty to order
+
+					min_qty_2_ord_c_grade = config[companycode]['c_min']
+
+					if product_grade == 'C':
+						if qcomm > qspy:
+							qto_rounded = qcomm
+						elif qspy < min_qty_2_ord_c_grade:
+							qto_rounded = qcomm
+						elif qspy >= min_qty_2_ord_c_grade:
+							qto_rounded = qspy
+					elif product_grade == 'D':
+						qto_rounded = qcomm
+					else:
+						qto_rounded = roundup(qto,order_mod)
+
 				except Exception:
 					log_entry(logfilename,"I can't execute query. ERR:004\n")
 					raise Exception
@@ -264,8 +287,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
 				expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
 				'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date,
-				product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1],
-				prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
+				product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, qto, qto_rounded, qoo, qoop, qcomm, qspy,
+				qeoh, qoh, qst, order_type, vendor_cost)
 
 				# print(insert_query)
 				try:
@@ -1205,7 +1228,6 @@ def check_ship_date(conn, companycode):
 		cur.execute(check_date_query)
 		numdates = cur.rowcount
 		ship_date = cur.fetchall()
-		print('Numdates: ',numdates)
 		if numdates > 1:
 			log_str = "Something is off, too many current dates ERR:112\n"
 			for sdate in ship_date:
@@ -1213,7 +1235,7 @@ def check_ship_date(conn, companycode):
 			log_entry(logfilename, log_str)
 		elif numdates == 1:
 			cur.close()
-			dtime_shipdate = ship_date[0][0]  #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d')
+			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d')
 			return dtime_shipdate
 		else:
 			return 0
