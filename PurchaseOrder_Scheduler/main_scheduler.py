@@ -1214,7 +1214,8 @@ def check_ship_date(conn, companycode):
 			log_entry(logfilename, log_str)
 		elif numdates == 1:
 			cur.close()
-			return str(ship_date[0][0])
+			dtime_shipdate = datetime.strptime(str(ship_date[0][0]), '%Y-%m-%d')
+			return dtime_shipdate
 		else:
 			return 0
 	except Exception as e:
@@ -1388,13 +1389,13 @@ def manual_run():
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 		log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
 		create_hotstock_order(conn, companycode)
-		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 	elif run_choice == 'g':
@@ -1441,13 +1442,13 @@ def manual_run():
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 		log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
 		create_hotstock_order(conn, companycode)
-		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 
@@ -1501,14 +1502,14 @@ def manual_run():
 
 			log_str = 'Manual run - Completion time: {0}\n'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
-			# log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
+			log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
 			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
 		elif order_type == 'H':
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			# log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
+			log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
 			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
 
@@ -1568,13 +1569,13 @@ def manual_run():
 
 			log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
-			# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
 		elif order_type == 'H':
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
 
 
@@ -1717,7 +1718,7 @@ def main(companycode):
 		log_entry(config[companycode]['logfilename'],log_str)
 
 		run_all(conn, companycode)
-		# log_str = "Runtime: "+str(datetime.datetime.now()- start_clock)
+		log_str = "Runtime: "+str(datetime.datetime.now()- start_clock)
 		log_entry(logfilename,log_str)
 		log_entry(logfilename,"="*80+"\n")
 
