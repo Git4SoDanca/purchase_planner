@@ -1140,35 +1140,7 @@ def create_hotstock_order(conn, companycode):
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error updating orders with hot stock quantities. ERR:110 {0}\n\n{1}".format(now, str(e))
 				log_entry(logfilename, log_str)
-			#     insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
-			#         product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
-			#         expected_on_hand, qty_on_hand, sales_trend) VALUES (default, 'H', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8}, '{9}', {10}, {11}, {12}, {13}, {14},
-			#         {15}, {16}, {17}, {18}, {19})""".format(vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id,
-			#         product_grade, 1, pp_new_q2o, pp_new_q2o, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend)
-			#     cur2 = conn.cursor()
-			#     cur2.execute(insert_query)
-			#     conn.commit()
-			#     cur2.close()
-			#
-			#
-			#
-			#
-			#     update_query = """UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES ({0},{1}) WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
-			#     cur2.execute(update_query)
-			#     conn.commit()
-			#     cur2.close()
-			#     cur2 = conn.cursor()
-			#
-			#
-			#     update_query = """UPDATE sodanca_estoque_pulmao SET (quantity_available) VALUES ({0}) WHERE id = {1}""".format(0,ep_lin_id)
-			#     cur2.execute(update_query)
-			#     conn.commit()
-			#     cur2.close()
-			#
-			# except Exception as e:
-			#     now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
-			#     log_str = "Error updating orders with hot stock quantities. ERR:104 {0}\n\n{1}".format(now, str(e))
-			#     log_entry(logfilename, log_str)
+
 		elif pp_q2o <= ep_qa:
 			try:
 				pp_new_q2o = pp_q2o
@@ -1416,15 +1388,13 @@ def manual_run():
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 		log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
 		create_hotstock_order(conn, companycode)
-		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 	elif run_choice == 'g':
@@ -1467,23 +1437,17 @@ def manual_run():
 		log_entry(config[companycode]['logfilename'],log_str)
 
 		for order_type in types_list:
-		#     if order_type == 'N':  # DELETE IF NOT NEEDED
-		#         lead_time = lead_normal
-		#     elif order_type == 'R':
-		#         lead_time = lead_rush
 			create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 		log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
 		create_hotstock_order(conn, companycode)
-		print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 
@@ -1528,10 +1492,6 @@ def manual_run():
 			log_entry(config[companycode]['logfilename'],log_str)
 
 			for grade in grades_list:
-			#     if order_type == 'N': #DELETE IF NOT NEEDED
-			#         lead_time = config[companycode]['lead_normal']
-			#     elif order_type == 'R':
-			#         lead_time = lead_rush
 
 				if grade in ['C','D'] and order_type == 'N':
 					log_str = 'Skipping order grade {0}, type {1} - {2}'.format(grade, order_type, datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
@@ -1541,14 +1501,14 @@ def manual_run():
 
 			log_str = 'Manual run - Completion time: {0}\n'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
-			log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
+			# log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
 			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
 		elif order_type == 'H':
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
+			# log_str = ('Runtime: {0}\n').format,str(datetime.datetime.now()- start_clock)
 			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
 
@@ -1599,24 +1559,6 @@ def manual_run():
 		elif clear_table == 'n':
 			pass
 
-		# if order_type == 'N': # DELETE IF NOT NEEDED
-		#     lead_time = lead_normal
-		# elif order_type == 'R':
-		#     lead_time = lead_rush
-		#
-		# log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-		# start_clock = datetime.datetime.now()
-		# log_entry(config[companycode]['logfilename'],log_str)
-
-		#
-		# create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
-		#
-		# log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-		# log_entry(logfilename,log_str)
-		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
-		# log_entry(logfilename,"="*80+"\n")
-
 		start_clock = datetime.datetime.now()
 		if order_type in ['R','N']:
 			log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
@@ -1626,16 +1568,13 @@ def manual_run():
 
 			log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
-			print('Runtime: ',str(datetime.datetime.now()- start_clock))
-			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+			# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
 		elif order_type == 'H':
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			# print(order_type)
-			print('Runtime: ',str(datetime.datetime.now()- start_clock))
-			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+			# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
 
 
@@ -1778,9 +1717,8 @@ def main(companycode):
 		log_entry(config[companycode]['logfilename'],log_str)
 
 		run_all(conn, companycode)
-		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
 		# log_str = "Runtime: "+str(datetime.datetime.now()- start_clock)
-		# log_entry(logfilename,log_str)
+		log_entry(logfilename,log_str)
 		log_entry(logfilename,"="*80+"\n")
 
 
@@ -1808,22 +1746,6 @@ menu_actions = {
 	'm' : back,
 	'q' : exit
 }
-
-# run_menu_actions = {
-#     'main_menu' : main_menu,
-#     'm' : back,
-#     'q' : exit
-# }
-#
-# # Dynamically populating company list into sub-menu
-# key_idx = 1
-# for key in config:
-#    if key == 'DEFAULT':
-#         pass
-#     else:
-#         print (key_idx,'-',key)
-#         run_menu_actions[key_idx] = manual_run(key)
-#         key_idx += 1
 
 ### -------------------------------- MAIN CALL -------------------------------------------- ###
 
