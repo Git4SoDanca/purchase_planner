@@ -610,7 +610,7 @@ def create_tables(conn, companycode):
 		raise
 
 def create_functions(conn,companycode):
-	functions_query = ['']*9
+	functions_query = ['']*8
 
 	functions_query[0] = """
 		-- Quantity Committed
@@ -840,28 +840,6 @@ def create_functions(conn,companycode):
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
 	functions_query[7] = """
-		DROP FUNCTION sd_update_pplan_date()
-		CREATE OR REPLACE FUNCTION sd_update_pplan_date() RETURNS integer AS $BODY$
-		DECLARE
-			a_count integer;
-			b_count integer;
-			c_count integer;
-		BEGIN
-			UPDATE sodanca_purchase_plan_date set status = 't' WHERE status ='c';
-			GET DIAGNOSTICS a_count = ROW_COUNT;
-			INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (((SELECT ship_date FROM sodanca_purchase_plan_date WHERE status = 't')::date+'1 week'::interval)::date , now(),'c');
-			GET DIAGNOSTICS b_count = ROW_COUNT;
-			UPDATE sodanca_purchase_plan_date set status = 'o' WHERE status ='t';
-			GET DIAGNOSTICS c_count = ROW_COUNT;
-			RETURN a_count+b_count+c_count;
-		END;
-		$BODY$
-		LANGUAGE plpgsql VOLATILE
-		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
-		    OWNER TO {login};
-	""".format(login = config[companycode]['login'])
-
-	functions_query[8] = """
 		CREATE OR REPLACE FUNCTION sd_update_pplan_date(sdate date default '1970-01-01' ) RETURNS integer AS $BODY$
 		DECLARE
 			a_count integer;
@@ -879,9 +857,9 @@ def create_functions(conn,companycode):
 			UPDATE sodanca_purchase_plan_date set status = 'o' WHERE status ='t';
 			GET DIAGNOSTICS c_count = ROW_COUNT;
 			RETURN a_count+b_count+c_count;
-		END
-		$BODY$
-		LANGUAGE plpgsql VOLATILE
+		END;
+		LANGUAGE 'plpgsql' VOLATILE;
+		$BODY$;
 		ALTER FUNCTION public.sd_update_pplan_date(date)
 		    OWNER TO {login};
 	""".format(login = config[companycode]['login'])
