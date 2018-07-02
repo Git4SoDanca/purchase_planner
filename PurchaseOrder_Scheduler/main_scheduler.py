@@ -254,6 +254,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					qoh=prod_details[0][6]
 					qst=prod_details[0][7]
 
+					print('DEBUG prod_details assignments: {0},{1},{2},{3},{4},{5},{6},{7}'.format(qto,qoo,qoop,qcomm,qspy,qeoh,qoh,qst)')
 					# Rounding qty to order
 
 					min_qty_2_ord_c_grade = config[companycode]['c_min']
