@@ -1296,8 +1296,8 @@ def run_all(conn , companycode):
 	plan_period_d = int(config[companycode]['plan_period_d'])
 
 	try:
-		create_order(conn, 'N', 'A', plan_period_a, companycode)
-		create_order(conn, 'N', 'B', plan_period_b, companycode)
+		# create_order(conn, 'N', 'A', plan_period_a, companycode)
+		# create_order(conn, 'N', 'B', plan_period_b, companycode)
 		create_order(conn, 'N', 'C', plan_period_b, companycode)
 		create_order(conn, 'R', 'A', plan_period_a, companycode)
 		create_order(conn, 'R', 'B', plan_period_b, companycode)
