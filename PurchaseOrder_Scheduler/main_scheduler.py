@@ -108,9 +108,9 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		# Setting dates for purchase period calculated dates for normal shipments and queried for rush
 		if order_type == 'N':
 			# print('DEBUG ORDER "R":',vendor, order_type)
-			initial_date_query = "SELECT ship_date FROM sodanca_purchase_plan_date WHERE status ='c';"
-			cur.execute(initial_date_query)
-			initial_regular_ship_date = cur.fetchone()
+			# initial_date_query = "SELECT ship_date FROM sodanca_purchase_plan_date WHERE status ='c';"
+			# cur.execute(initial_date_query)
+			initial_regular_ship_date = check_ship_date(conn, companycode) #cur.fetchone()
 
 			lead_time = int(config[companycode]['lead_normal'])
 			# initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
@@ -193,9 +193,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			# print(product)
 			# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
 			# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
-			## TODO need to redefine pdate
+
 			start_date = initial_regular_ship_date # pdate.strftime('%Y-%m-%d')
-			# print('DEBUG - Top of pdate loop:',start_date)
 			now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 			end_date = (start_date + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 			start_prev_year = (start_date - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
