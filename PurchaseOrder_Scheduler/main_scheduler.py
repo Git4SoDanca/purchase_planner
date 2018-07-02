@@ -1300,14 +1300,14 @@ def run_all(conn , companycode):
 	plan_period_d = int(config[companycode]['plan_period_d'])
 
 	try:
+		create_order(conn, 'N', 'A', plan_period_a, companycode)
+		create_order(conn, 'N', 'B', plan_period_b, companycode)
+		create_order(conn, 'N', 'C', plan_period_b, companycode
 		create_order(conn, 'R', 'A', plan_period_a, companycode)
 		create_order(conn, 'R', 'B', plan_period_b, companycode)
 		create_order(conn, 'R', 'C', plan_period_c, companycode)
 		create_order(conn, 'R', 'D', plan_period_d, companycode)
-		create_order(conn, 'N', 'A', plan_period_a, companycode)
-		create_order(conn, 'N', 'B', plan_period_b, companycode)
-		create_order(conn, 'N', 'C', plan_period_b, companycode)
-
+)
 
 		create_hotstock_order(conn, companycode)
 
@@ -1780,8 +1780,8 @@ def main(companycode):
 
 		run_all(conn, companycode)
 		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		log_str = "Runtime: "+str(datetime.datetime.now()- start_clock)
-		log_entry(logfilename,log_str)
+		# log_str = "Runtime: "+str(datetime.datetime.now()- start_clock)
+		# log_entry(logfilename,log_str)
 		log_entry(logfilename,"="*80+"\n")
 
 
