@@ -275,15 +275,21 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					min_qty_2_ord_c_grade = config[companycode]['c_min']
 					print('DEBUG min_qty_2_ord_c_grade',min_qty_2_ord_c_grade)
 					if product_grade == 'C':
+						print('DEBUG pg == c')
 						if qcomm > qspy:
+							print('DEBUG qcomm > qspy')
 							qto_rounded = qcomm
 						elif qspy < min_qty_2_ord_c_grade:
+							print('DEBUG qspy < min q2o')
 							qto_rounded = qcomm
 						elif qspy >= min_qty_2_ord_c_grade:
+							print('DEBUG qspy >= min q2o')
 							qto_rounded = qspy
 					elif product_grade == 'D':
+						print('DEBUG pg== D ')
 						qto_rounded = qcomm
 					else:
+						print('DEBUG not c || d')
 						qto_rounded = roundup(qto,order_mod)
 
 				except Exception:
