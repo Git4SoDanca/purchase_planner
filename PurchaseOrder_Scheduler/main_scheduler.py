@@ -1242,7 +1242,7 @@ def check_ship_date(conn, companycode):
 			log_entry(logfilename, log_str)
 		elif numdates == 1:
 			cur.close()
-			return ship_date[0][0]
+			return str(ship_date[0][0])
 		else:
 			return 0
 	except Exception as e:
@@ -1726,7 +1726,7 @@ def install_update():
 				sys.exit(1)
 
 		else:
-			print('Current ship date defined as {0}').format(ship_date)
+			print('Current ship date defined as',ship_date)
 			print('Would you like to change it? (y/n)')
 			while 1:
 				choice = input(" >> ")
@@ -1744,7 +1744,7 @@ def install_update():
 						print('Exiting program')
 						sys.exit(1)
 				elif ch == 'n':
-					print('Leaving current ship date as {0}').format(ship_date)
+					print('Leaving current ship date as {0}'.format(ship_date))
 					print('Exiting program')
 					sys.exit(1)
 				else:
