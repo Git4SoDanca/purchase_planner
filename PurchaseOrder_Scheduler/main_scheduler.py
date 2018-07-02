@@ -1772,15 +1772,16 @@ def main(companycode):
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		# print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
-		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
+		log_entry(logfilename,"\n\nProcess started - {0}\n".format((datetime.datetime.now().strftime("%H:%M:%S - %Y-%m-%d"))))
 		drop_results_table(conn,companycode)
-		log_str = ('Running all grades and order types - started at:{}').format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
+		log_str = ("Running all grades and order types - started at:{}").format((datetime.datetime.now().strftime("%H:%M:%S - %Y-%m-%d")))
 		start_clock = datetime.datetime.now()
 		log_entry(config[companycode]['logfilename'],log_str)
 
 		run_all(conn, companycode)
 		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
+		log_str = "Runtime: "+str(datetime.datetime.now()- start_clock)
+		log_entry(logfilename,log_str)
 		log_entry(logfilename,"="*80+"\n")
 
 
