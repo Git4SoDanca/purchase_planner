@@ -1307,7 +1307,6 @@ def run_all(conn , companycode):
 		create_order(conn, 'R', 'B', plan_period_b, companycode)
 		create_order(conn, 'R', 'C', plan_period_c, companycode)
 		create_order(conn, 'R', 'D', plan_period_d, companycode)
-)
 
 		create_hotstock_order(conn, companycode)
 
