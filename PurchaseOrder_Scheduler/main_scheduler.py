@@ -881,8 +881,6 @@ def create_functions(conn,companycode):
 		log_entry(logfilename,str(e))
 		raise
 
-
-
 def add_check_digit(upc_str):
 
 	upc_str = str(upc_str)
