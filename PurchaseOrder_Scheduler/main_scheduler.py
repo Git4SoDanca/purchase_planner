@@ -582,7 +582,7 @@ def create_tables(conn, companycode):
 			login=config[companycode]['login'])
 
 	table_queries[2] = """
-		CREATE TABLE public.sodanca_purchase_plan_date (
+		CREATE TABLE IF NOT EXISTS public.sodanca_purchase_plan_date (
 		  ship_date date NOT NULL,
 		  gen_tstamp timestamp NOT NULL,
 		  status character(1) NOT NULL
@@ -601,9 +601,9 @@ def create_tables(conn, companycode):
 			cur.execute(table_query)
 			conn.commit()
 		cur.close()
-		log_entry(logfilename,"sodanca_stock_control created successfully.")
+		log_entry(logfilename,"Purchase plan tables created successfully.")
 	except Exception as e:
-		log_entry(logfilename, 'Error creating sodanca_stock_control. ERR:008')
+		log_entry(logfilename, 'Error creating tables. ERR:008')
 		log_entry(logfilename,str(e))
 		raise
 
