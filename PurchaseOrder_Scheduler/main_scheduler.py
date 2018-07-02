@@ -225,14 +225,26 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				raise Exception
 				pass
 
-			if product_grade == 'C' and order_type == 'N' and product_qto[0][0]<3:
+			if product_grade == 'C' and order_type == 'N' :
+				try:
+					cur2.execute(qcomm_query)
+					qcomm_qval = cur2.fetchone()
+					cur2.close()
+				except Exception as e:
+					log_str= 'ERR:116 - Cannot query qcomm for C item'
+
+				qto_qval = product_qto[0][0]
+
+				if qto_qval<3 and qcomm_qval == 0:
 				# product_qto[0][0] = 0
-				qty_2_ord = 0
-			elif product_grade == 'C' and order_type == 'N' and product_qto[0][1] > 0:
+					qty_2_ord = 0
+				elif  qcomm_qval > 0:
 				# product_qto[0][0] = product_qto[0][1]
-				qty_2_ord = product_qto[0][1]
+					qty_2_ord = qcomm_qval
+				else:
+					qty_2_ord = qto_qval
 			else:
-				qty_2_ord = product_qto[0][0]
+				qty_2_ord = qto_qval
 
 			# if 1: ### TEST
 			if qty_2_ord > 0: ### Production
@@ -255,7 +267,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					qeoh=prod_details[0][5]
 					qoh=prod_details[0][6]
 					qst=prod_details[0][7]
-					
+
 					print('DEBUG prod_details assignments: {0},{1},{2},{3},{4},{5},{6},{7}'.format(qto,qoo,qoop,qcomm,qspy,qeoh,qoh,qst))
 					# Rounding qty to order
 
