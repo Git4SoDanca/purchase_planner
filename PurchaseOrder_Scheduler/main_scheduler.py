@@ -231,6 +231,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			elif product_grade == 'C' and order_type == 'N' and product_qto[0][1] > 0:
 				# product_qto[0][0] = product_qto[0][1]
 				qty_2_ord = product_qto[0][1]
+			else:
+				qty_2_ord = product_qto[0][0]
 
 			# if 1: ### TEST
 			if qty_2_ord > 0: ### Production
