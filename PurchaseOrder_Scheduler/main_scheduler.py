@@ -203,8 +203,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			if order_type == 'R' and product_grade in ['C','D'] :
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			elif order_type == 'N' and product_grade == 'C':
-				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
-				qcomm_query = "SELECT COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0), COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+				# qcomm_query = "SELECT COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			else:
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
@@ -226,14 +226,15 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				pass
 
 			if product_grade == 'C' and order_type == 'N' :
-				try:
-					cur2.execute(qcomm_query)
-					qcomm_qval = cur2.fetchone()
-					cur2.close()
-				except Exception as e:
-					log_str= 'ERR:116 - Cannot query qcomm for C item'
+				# try:
+				# 	cur2.execute(qcomm_query)
+				# 	qcomm_qval = cur2.fetchone()
+				# 	cur2.close()
+				# except Exception as e:
+				# 	log_str= 'ERR:116 - Cannot query qcomm for C item'
 
 				qto_qval = product_qto[0][0]
+				qcomm_qval = product_qto[0][1]
 
 				if qto_qval<3 and qcomm_qval == 0:
 				# product_qto[0][0] = 0
