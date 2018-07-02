@@ -1213,7 +1213,7 @@ def check_ship_date(conn, companycode):
 			log_entry(logfilename, log_str)
 		elif numdates == 1:
 			cur.close()
-			dtime_shipdate = datetime.strptime(str(ship_date[0][0]), '%Y-%m-%d')
+			dtime_shipdate = datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d')
 			return dtime_shipdate
 		else:
 			return 0
