@@ -245,6 +245,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					cur.execute(prod_details_query) #cur3
 					prod_details = cur.fetchall()
 
+					print('DEBUG prod_details assigning')
+
 					qto=prod_details[0][0]
 					qoo=prod_details[0][1]
 					qoop=prod_details[0][2]
@@ -253,8 +255,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					qeoh=prod_details[0][5]
 					qoh=prod_details[0][6]
 					qst=prod_details[0][7]
-
-					print('DEBUG prod_details assignments: {0},{1},{2},{3},{4},{5},{6},{7}'.format(qto,qoo,qoop,qcomm,qspy,qeoh,qoh,qst)')
+					
+					print('DEBUG prod_details assignments: {0},{1},{2},{3},{4},{5},{6},{7}'.format(qto,qoo,qoop,qcomm,qspy,qeoh,qoh,qst))
 					# Rounding qty to order
 
 					min_qty_2_ord_c_grade = config[companycode]['c_min']
