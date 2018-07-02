@@ -840,7 +840,7 @@ def create_functions(conn,companycode):
 	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
 	functions_query[7] = """
-		CREATE OR REPLACE FUNCTION sd_update_pplan_date(sdate date default '1970-01-01' ) RETURNS integer AS $BODY$
+		CREATE OR REPLACE FUNCTION sd_update_pplan_date(sdate date default '1970-01-01' ) RETURNS integer AS $$
 		DECLARE
 			a_count integer;
 			b_count integer;
@@ -858,8 +858,9 @@ def create_functions(conn,companycode):
 			GET DIAGNOSTICS c_count = ROW_COUNT;
 			RETURN a_count+b_count+c_count;
 		END;
+		$$
 		LANGUAGE 'plpgsql' VOLATILE;
-		$BODY$;
+
 		ALTER FUNCTION public.sd_update_pplan_date(date)
 		    OWNER TO {login};
 	""".format(login = config[companycode]['login'])
