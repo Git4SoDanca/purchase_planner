@@ -108,7 +108,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		# Setting dates for purchase period calculated dates for normal shipments and queried for rush
 		if order_type == 'N':
 			# print('DEBUG ORDER "R":',vendor, order_type)
-			initial_date_query = "SELECT ship_date WHERE status ='c';"
+			initial_date_query = "SELECT ship_date FROM sodanca_purchase_plan_date WHERE status ='c';"
 			cur.execute(initial_date_query)
 			initial_regular_ship_date = cur.fetchone()
 
