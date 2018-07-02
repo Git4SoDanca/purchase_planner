@@ -582,8 +582,6 @@ def create_tables(conn, companycode):
 			login=config[companycode]['login'])
 
 	table_queries[2] = """
-		DROP TABLE IF EXISTS public.sodanca_purchase_plan_date;
-
 		CREATE TABLE public.sodanca_purchase_plan_date (
 		  ship_date date NOT NULL,
 		  gen_tstamp timestamp NOT NULL,
@@ -1704,7 +1702,6 @@ def install_update():
 		print('Tables created')
 		print('Checking if ship date exists.')
 		ship_date = check_ship_date(conn, companycode)
-		print('Ship date {0}').format(ship_date)
 		cur = conn.cursor()
 		if ship_date == 0:
 			print('There is no ship date defined')
