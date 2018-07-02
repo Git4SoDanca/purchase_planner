@@ -258,7 +258,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					cur.execute(prod_details_query) #cur3
 					prod_details = cur.fetchall()
 
-					print('DEBUG prod_details assigning')
+					#print('DEBUG prod_details assigning')
 
 					qto=prod_details[0][0]
 					qoo=prod_details[0][1]
@@ -269,34 +269,28 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					qoh=prod_details[0][6]
 					qst=prod_details[0][7]
 
-					print('DEBUG prod_details assignments: {0},{1},{2},{3},{4},{5},{6},{7}'.format(qto,qoo,qoop,qcomm,qspy,qeoh,qoh,qst))
+					#print('DEBUG prod_details assignments: {0},{1},{2},{3},{4},{5},{6},{7}'.format(qto,qoo,qoop,qcomm,qspy,qeoh,qoh,qst))
 					# Rounding qty to order
 
-					min_qty_2_ord_c_grade = config[companycode]['c_min']
-					print('DEBUG min_qty_2_ord_c_grade',min_qty_2_ord_c_grade)
+					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
 					if product_grade == 'C':
-						print('DEBUG pg == c')
 						if qcomm > qspy:
-							print('DEBUG qcomm > qspy')
 							qto_rounded = qcomm
 						elif qspy < min_qty_2_ord_c_grade:
-							print('DEBUG qspy < min q2o')
 							qto_rounded = qcomm
 						elif qspy >= min_qty_2_ord_c_grade:
-							print('DEBUG qspy >= min q2o')
 							qto_rounded = qspy
 					elif product_grade == 'D':
-						print('DEBUG pg== D ')
 						qto_rounded = qcomm
 					else:
-						print('DEBUG not c || d')
 						qto_rounded = roundup(qto,order_mod)
 
-				except Exception:
-					log_entry(logfilename,"I can't execute query. ERR:004\n")
+				except Exception as e:
+					log_str = 'ERR:004 - Error while gathering product quantities\n'
+					log_str += str(e)
+					log_entry(logfilename,log_str)
 					raise Exception
 					pass
-
 				if vendor_parent != 0:
 					product_vendor = vendor_parent
 					product_group = vendor[0]
