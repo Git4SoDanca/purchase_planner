@@ -1237,12 +1237,12 @@ def check_ship_date(conn, companycode):
 		numdates = cur.rowcount
 		ship_date = cur.fetchall()
 
-		if numrows > 1:
+		if numdates > 1:
 			log_str = "Something is off, too many current dates ERR:112\n"
 			for sdate in ship_date:
 				log_str += sdate[0]
 			log_entry(logfilename, log_str)
-		elif numrows == 1:
+		elif numdates == 1:
 			cur.close()
 			return ship_date[0][0]
 		else:
@@ -1695,7 +1695,7 @@ def install_update():
 		conn = psycopg2.connect(dsn)
 		conn.set_session(autocommit=True)
 		log_entry(logfilename,"\n\nSetup started - {0}\n".format((datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))))
-		print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
+		# print('dsn: {0}\n companycode: {1} \n conn: {2}\n'.format(dsn,companycode,conn)) #DEBUG
 		print('Creating functions')
 		create_functions(conn, companycode)
 		print('Functions created')
