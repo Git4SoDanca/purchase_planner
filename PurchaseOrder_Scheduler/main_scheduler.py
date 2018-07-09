@@ -108,9 +108,9 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 		# Setting dates for purchase period calculated dates for normal shipments and queried for rush
 		if order_type == 'N':
 			# print('DEBUG ORDER "R":',vendor, order_type)
-			initial_date_query = "SELECT ship_date FROM sodanca_purchase_plan_date WHERE status ='c';"
-			cur.execute(initial_date_query)
-			initial_regular_ship_date = cur.fetchone()
+			# initial_date_query = "SELECT ship_date FROM sodanca_purchase_plan_date WHERE status ='c';"
+			# cur.execute(initial_date_query)
+			initial_regular_ship_date = check_ship_date(conn, companycode) #cur.fetchone()
 
 			lead_time = int(config[companycode]['lead_normal'])
 			# initial_regular_ship_date = now + datetime.timedelta(weeks = lead_time) #lead time in weeks
@@ -193,9 +193,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			# print(product)
 			# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
 			# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
-			## TODO need to redefine pdate
+
 			start_date = initial_regular_ship_date # pdate.strftime('%Y-%m-%d')
-			# print('DEBUG - Top of pdate loop:',start_date)
 			now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 			end_date = (start_date + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 			start_prev_year = (start_date - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
@@ -204,8 +203,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			if order_type == 'R' and product_grade in ['C','D'] :
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			elif order_type == 'N' and product_grade == 'C':
-				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
-				qcomm_query = "SELECT COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0), COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+				# qcomm_query = "SELECT COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			else:
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
@@ -226,13 +225,31 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				raise Exception
 				pass
 
-			if product_grade == 'C' and order_type == 'N' and product_qto[0][0]<3:
-				product_qto[0][0] = 0
-			elif product_grade == 'C' and order_type == 'N' and product_qto[0][1] > 0:
-				product_qto[0][0] = product_qto[0][1]
+			qto_qval = product_qto[0][0]
+
+			if product_grade == 'C' and order_type == 'N' :
+				# try:
+				# 	cur2.execute(qcomm_query)
+				# 	qcomm_qval = cur2.fetchone()
+				# 	cur2.close()
+				# except Exception as e:
+				# 	log_str= 'ERR:116 - Cannot query qcomm for C item'
+
+				qcomm_qval = product_qto[0][1]
+
+				if qto_qval<3 and qcomm_qval == 0:
+				# product_qto[0][0] = 0
+					qty_2_ord = 0
+				elif  qcomm_qval > 0:
+				# product_qto[0][0] = product_qto[0][1]
+					qty_2_ord = qcomm_qval
+				else:
+					qty_2_ord = qto_qval
+			else:
+				qty_2_ord = qto_qval
 
 			# if 1: ### TEST
-			if product_qto[0][0] > 0: ### Production
+			if qty_2_ord > 0: ### Production
 			# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
 				prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{4}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
@@ -241,16 +258,40 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				try:
 					cur.execute(prod_details_query) #cur3
 					prod_details = cur.fetchall()
-					# Rounding qty to order
-					qto_rounded = roundup(prod_details[0][0],order_mod)
 
-					# print(product_template_name, product_name, product_grade, qto_rounded, prod_details[0][0],prod_details[0][1], prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7])
-					# print(prod_details)
-				except Exception:
-					log_entry(logfilename,"I can't execute query. ERR:004\n")
+					#print('DEBUG prod_details assigning')
+
+					qto=prod_details[0][0]
+					qoo=prod_details[0][1]
+					qoop=prod_details[0][2]
+					qcomm=prod_details[0][3]
+					qspy=prod_details[0][4]
+					qeoh=prod_details[0][5]
+					qoh=prod_details[0][6]
+					qst=prod_details[0][7]
+
+					#print('DEBUG prod_details assignments: {0},{1},{2},{3},{4},{5},{6},{7}'.format(qto,qoo,qoop,qcomm,qspy,qeoh,qoh,qst))
+					# Rounding qty to order
+
+					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
+					if product_grade == 'C':
+						if qcomm > qspy:
+							qto_rounded = qcomm
+						elif qspy < min_qty_2_ord_c_grade:
+							qto_rounded = qcomm
+						elif qspy >= min_qty_2_ord_c_grade:
+							qto_rounded = qspy
+					elif product_grade == 'D':
+						qto_rounded = qcomm
+					else:
+						qto_rounded = roundup(qto,order_mod)
+
+				except Exception as e:
+					log_str = 'ERR:004 - Error while gathering product quantities\n'
+					log_str += str(e)
+					log_entry(logfilename,log_str)
 					raise Exception
 					pass
-
 				if vendor_parent != 0:
 					product_vendor = vendor_parent
 					product_group = vendor[0]
@@ -265,8 +306,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
 				expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
 				'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date,
-				product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, prod_details[0][0], qto_rounded, prod_details[0][1],
-				prod_details[0][2], prod_details[0][3], prod_details[0][4], prod_details[0][5], prod_details[0][6], prod_details[0][7], order_type, vendor_cost)
+				product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, qto, qto_rounded, qoo, qoop, qcomm, qspy,
+				qeoh, qoh, qst, order_type, vendor_cost)
 
 				# print(insert_query)
 				try:
@@ -1140,35 +1181,7 @@ def create_hotstock_order(conn, companycode):
 				now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 				log_str = "Error updating orders with hot stock quantities. ERR:110 {0}\n\n{1}".format(now, str(e))
 				log_entry(logfilename, log_str)
-			#     insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
-			#         product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
-			#         expected_on_hand, qty_on_hand, sales_trend) VALUES (default, 'H', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8}, '{9}', {10}, {11}, {12}, {13}, {14},
-			#         {15}, {16}, {17}, {18}, {19})""".format(vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id, product_name, product_category_id,
-			#         product_grade, 1, pp_new_q2o, pp_new_q2o, qty_on_order, qty_on_order_period, qty_committed, qty_sold, expected_on_hand, qty_on_hand, sales_trend)
-			#     cur2 = conn.cursor()
-			#     cur2.execute(insert_query)
-			#     conn.commit()
-			#     cur2.close()
-			#
-			#
-			#
-			#
-			#     update_query = """UPDATE sodanca_purchase_plan SET (qty_2_ord, qty_2_ord_adj) VALUES ({0},{1}) WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
-			#     cur2.execute(update_query)
-			#     conn.commit()
-			#     cur2.close()
-			#     cur2 = conn.cursor()
-			#
-			#
-			#     update_query = """UPDATE sodanca_estoque_pulmao SET (quantity_available) VALUES ({0}) WHERE id = {1}""".format(0,ep_lin_id)
-			#     cur2.execute(update_query)
-			#     conn.commit()
-			#     cur2.close()
-			#
-			# except Exception as e:
-			#     now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
-			#     log_str = "Error updating orders with hot stock quantities. ERR:104 {0}\n\n{1}".format(now, str(e))
-			#     log_entry(logfilename, log_str)
+
 		elif pp_q2o <= ep_qa:
 			try:
 				pp_new_q2o = pp_q2o
@@ -1234,7 +1247,6 @@ def check_ship_date(conn, companycode):
 		cur.execute(check_date_query)
 		numdates = cur.rowcount
 		ship_date = cur.fetchall()
-		print('Numdates: ',numdates)
 		if numdates > 1:
 			log_str = "Something is off, too many current dates ERR:112\n"
 			for sdate in ship_date:
@@ -1242,7 +1254,8 @@ def check_ship_date(conn, companycode):
 			log_entry(logfilename, log_str)
 		elif numdates == 1:
 			cur.close()
-			return str(ship_date[0][0])
+			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d')
+			return dtime_shipdate
 		else:
 			return 0
 	except Exception as e:
@@ -1307,7 +1320,6 @@ def run_all(conn , companycode):
 		create_order(conn, 'R', 'B', plan_period_b, companycode)
 		create_order(conn, 'R', 'C', plan_period_c, companycode)
 		create_order(conn, 'R', 'D', plan_period_d, companycode)
-)
 
 		create_hotstock_order(conn, companycode)
 
@@ -1417,14 +1429,12 @@ def manual_run():
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 		log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
 		create_hotstock_order(conn, companycode)
-		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
@@ -1468,22 +1478,16 @@ def manual_run():
 		log_entry(config[companycode]['logfilename'],log_str)
 
 		for order_type in types_list:
-		#     if order_type == 'N':  # DELETE IF NOT NEEDED
-		#         lead_time = lead_normal
-		#     elif order_type == 'R':
-		#         lead_time = lead_rush
 			create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		print('Runtime: ',str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
 		log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
 		create_hotstock_order(conn, companycode)
-		print('Runtime: ',str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 		log_entry(logfilename,"="*80+"\n")
 
@@ -1529,10 +1533,6 @@ def manual_run():
 			log_entry(config[companycode]['logfilename'],log_str)
 
 			for grade in grades_list:
-			#     if order_type == 'N': #DELETE IF NOT NEEDED
-			#         lead_time = config[companycode]['lead_normal']
-			#     elif order_type == 'R':
-			#         lead_time = lead_rush
 
 				if grade in ['C','D'] and order_type == 'N':
 					log_str = 'Skipping order grade {0}, type {1} - {2}'.format(grade, order_type, datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
@@ -1600,24 +1600,6 @@ def manual_run():
 		elif clear_table == 'n':
 			pass
 
-		# if order_type == 'N': # DELETE IF NOT NEEDED
-		#     lead_time = lead_normal
-		# elif order_type == 'R':
-		#     lead_time = lead_rush
-		#
-		# log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
-		# start_clock = datetime.datetime.now()
-		# log_entry(config[companycode]['logfilename'],log_str)
-
-		#
-		# create_order(conn, order_type, run_grade, plan_period[run_grade], companycode)
-		#
-		# log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-		# log_entry(logfilename,log_str)
-		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		# log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
-		# log_entry(logfilename,"="*80+"\n")
-
 		start_clock = datetime.datetime.now()
 		if order_type in ['R','N']:
 			log_str = ('Manual run started - Running only grade {0} and only order type {1} - started at:{2}').format(run_grade, order_type, (datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
@@ -1627,15 +1609,12 @@ def manual_run():
 
 			log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
-			print('Runtime: ',str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
 		elif order_type == 'H':
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			# print(order_type)
-			print('Runtime: ',str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,'Runtime: '+str(datetime.datetime.now()- start_clock))
 			log_entry(logfilename,"="*80+"\n")
 
@@ -1779,9 +1758,8 @@ def main(companycode):
 		log_entry(config[companycode]['logfilename'],log_str)
 
 		run_all(conn, companycode)
-		# print('Runtime: ',str(datetime.datetime.now()- start_clock))
-		# log_str = "Runtime: "+str(datetime.datetime.now()- start_clock)
-		# log_entry(logfilename,log_str)
+		log_str = "Runtime: "+str(datetime.datetime.now()- start_clock)
+		log_entry(logfilename,log_str)
 		log_entry(logfilename,"="*80+"\n")
 
 
@@ -1809,22 +1787,6 @@ menu_actions = {
 	'm' : back,
 	'q' : exit
 }
-
-# run_menu_actions = {
-#     'main_menu' : main_menu,
-#     'm' : back,
-#     'q' : exit
-# }
-#
-# # Dynamically populating company list into sub-menu
-# key_idx = 1
-# for key in config:
-#    if key == 'DEFAULT':
-#         pass
-#     else:
-#         print (key_idx,'-',key)
-#         run_menu_actions[key_idx] = manual_run(key)
-#         key_idx += 1
 
 ### -------------------------------- MAIN CALL -------------------------------------------- ###
 
