@@ -1430,14 +1430,14 @@ def manual_run():
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		run_time = datetime.datetime.now()- start_clock)
+		run_time = datetime.datetime.now()- start_clock
 		log_entry(logfilename,'Runtime: '+str(run_time)
 		log_entry(logfilename,"="*80+"\n")
 
 		log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
 		create_hotstock_order(conn, companycode)
-		run_time = datetime.datetime.now()- start_clock)
+		run_time = datetime.datetime.now()- start_clock
 		log_entry(logfilename,'Runtime: '+str(run_time)
 		log_entry(logfilename,"="*80+"\n")
 
@@ -1485,7 +1485,7 @@ def manual_run():
 
 		log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 		log_entry(logfilename,log_str)
-		run_time = datetime.datetime.now()- start_clock)
+		run_time = datetime.datetime.now()- start_clock
 		log_entry(logfilename,'Runtime: '+str(run_time)
 		log_entry(logfilename,"="*80+"\n")
 
@@ -1546,7 +1546,7 @@ def manual_run():
 
 			log_str = 'Manual run - Completion time: {0}\n'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
-			run_time = datetime.datetime.now()- start_clock)
+			run_time = datetime.datetime.now()- start_clock
 			log_entry(logfilename,'Runtime: '+str(run_time)
 			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
@@ -1554,7 +1554,7 @@ def manual_run():
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			run_time = datetime.datetime.now()- start_clock)
+			run_time = datetime.datetime.now()- start_clock
 			log_entry(logfilename,'Runtime: '+str(run_time)
 			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
@@ -1615,14 +1615,14 @@ def manual_run():
 
 			log_str = 'Manual run - Completion time: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
-			run_time = datetime.datetime.now()- start_clock)
+			run_time = datetime.datetime.now()- start_clock
 			log_entry(logfilename,'Runtime: '+str(run_time)
 			log_entry(logfilename,"="*80+"\n")
 		elif order_type == 'H':
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
-			run_time = datetime.datetime.now()- start_clock)
+			run_time = datetime.datetime.now()- start_clock
 			log_entry(logfilename,'Runtime: '+str(run_time)
 			log_entry(logfilename,"="*80+"\n")
 
