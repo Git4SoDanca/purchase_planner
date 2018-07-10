@@ -1568,8 +1568,8 @@ def manual_run():
 
 
 		if order_type in ['R','N']:
-			log_str = ('Manual run started - Running all grades and only order type {0} - started at:{1}').format(order_type,(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d')))
 			start_clock = datetime.datetime.now()
+			log_str = ('Manual run started - Running all grades and only order type {0} - started at:{1}').format(order_type,(start_clock.strftime('%H:%M:%S - %Y-%m-%d')))
 			log_entry(config[companycode]['logfilename'],log_str)
 
 			for grade in grades_list:
@@ -1587,7 +1587,8 @@ def manual_run():
 			log_entry(logfilename,log_str)
 			log_entry(logfilename,"="*80+"\n")
 		elif order_type == 'H':
-			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+			start_clock = datetime.datetime.now()
+			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(start_clock.strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
 			run_time = datetime.datetime.now()- start_clock
