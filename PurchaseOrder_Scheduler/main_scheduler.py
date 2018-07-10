@@ -395,7 +395,7 @@ def drop_results_table(conn, companycode):
 
 def create_tables(conn, companycode):
 	#print("In create_tables") #DEBUG
-	table_queries = ['']*3
+	table_queries = ['']*4
 	table_queries[0] = """
 		DROP TABLE IF EXISTS sodanca_stock_control;
 		CREATE TABLE sodanca_stock_control AS
@@ -635,6 +635,25 @@ def create_tables(conn, companycode):
 		COMMENT ON TABLE public.sodanca_purchase_plan_date
 		  IS 'Updated via function sd_update_pplan_date';
 	""".format(login=config[companycode]['login'])
+
+	table_queries[3] = """
+		CREATE TABLE IF NOT EXISTS public.sodanca_shipment_schedule
+		(
+		    id serial NOT NULL,
+		    supplier_name character varying(30) NOT NULL,
+		    supplier_id integer NOT NULL,
+		    cut_off_date date NOT NULL,
+		    expected_date date NOT NULL,
+		    PRIMARY KEY (id)
+		)
+		WITH (
+		    OIDS = FALSE
+		);
+
+		ALTER TABLE public.sodanca_shipment_schedule
+		    OWNER to {login};
+	""".format(login=config[companycode]['login'])
+
 	#print(table_queries[0]) #DEBUG
 	logfilename = config[companycode]['logfilename']
 	try:
@@ -733,7 +752,10 @@ def create_functions(conn,companycode):
 
 		SELECT
 			CASE
-				WHEN sum(stock_move.product_qty) != 0 THEN sum(stock_move.product_qty) ELSE 0 END AS on_order_total
+				WHEN sum(stock_move.product_qty) != 0
+				THEN sum(stock_move.product_qty)
+				ELSE 0 END
+				AS on_order_total
 		FROM stock_move
 		WHERE
 			stock_move.location_dest_id = {customers}
@@ -849,7 +871,7 @@ def create_functions(conn,companycode):
 
 		AS $BODY$
 
-		SELECT GREATEST(sd_qs_prev_yr($1,$2,$3),sd_qcomm($1,$2,$3))-COALESCE(sd_expected_onhand($1,$2),0) AS qty_to_order from product_product
+		SELECT GREATEST(sd_qs_prev_yr($1,$2,$3),sd_qcomm($1,$2,$3))-sd_expected_onhand($1,$2) AS qty_to_order from product_product
 
 		$BODY$;
 
