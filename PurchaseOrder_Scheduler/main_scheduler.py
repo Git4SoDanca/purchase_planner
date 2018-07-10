@@ -396,6 +396,8 @@ def drop_results_table(conn, companycode):
 def create_tables(conn, companycode):
 	#print("In create_tables") #DEBUG
 	table_queries = ['']*4
+
+	#sodanca_stock_control & update product_product
 	table_queries[0] = """
 		DROP TABLE IF EXISTS sodanca_stock_control;
 		CREATE TABLE sodanca_stock_control AS
@@ -577,9 +579,9 @@ def create_tables(conn, companycode):
 		-- Update grades on product_product table
 		UPDATE product_product SET grade = sodanca_stock_control.grade FROM sodanca_stock_control
 		WHERE product_product.id = sodanca_stock_control.id;
-	""".format(grade_a_margin = config[companycode]['grade_a_margin'], grade_b_margin = config[companycode]['grade_b_margin'], grade_c_margin = config[companycode]['grade_c_margin'], min_inv_time_a = config[companycode]['min_inv_time_a'], max_inv_time_a = config[companycode]['max_inv_time_a'], min_inv_time_b = config[companycode]['min_inv_time_b'], max_inv_time_b = config[companycode]['max_inv_time_b'], min_inv_time_c = config[companycode]['min_inv_time_c'], max_inv_time_c = config[companycode]['max_inv_time_c'], min_inv_time_d = config[companycode]['min_inv_time_d'], max_inv_time_d = config[companycode]['max_inv_time_d'], categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'], categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'], login=config[companycode]['login'], mod_a_ba=config[companycode]['a_ba'],mod_b_ba=config[companycode]['b_ba'],mod_a_ch=config[companycode]['a_ch'],mod_b_ch=config[companycode]['b_ch'],mod_a_jz=config[companycode]['a_jz'],mod_b_jz=config[companycode]['b_jz'])
+		""".format(grade_a_margin = config[companycode]['grade_a_margin'], grade_b_margin = config[companycode]['grade_b_margin'], grade_c_margin = config[companycode]['grade_c_margin'], min_inv_time_a = config[companycode]['min_inv_time_a'], max_inv_time_a = config[companycode]['max_inv_time_a'], min_inv_time_b = config[companycode]['min_inv_time_b'], max_inv_time_b = config[companycode]['max_inv_time_b'], min_inv_time_c = config[companycode]['min_inv_time_c'], max_inv_time_c = config[companycode]['max_inv_time_c'], min_inv_time_d = config[companycode]['min_inv_time_d'], max_inv_time_d = config[companycode]['max_inv_time_d'], categ_ba = config[companycode]['categ_ba'], categ_ch = config[companycode]['categ_ch'], categ_jz = config[companycode]['categ_jz'], categ_tights = config[companycode]['categ_tights'], categ_shoes = config[companycode]['categ_shoes'], categ_dwear = config[companycode]['categ_dwear'], wh_stock = config[companycode]['wh_stock'], customers = config[companycode]['customers'], supplier = config[companycode]['supplier'], login=config[companycode]['login'], mod_a_ba=config[companycode]['a_ba'],mod_b_ba=config[companycode]['b_ba'],mod_a_ch=config[companycode]['a_ch'],mod_b_ch=config[companycode]['b_ch'],mod_a_jz=config[companycode]['a_jz'],mod_b_jz=config[companycode]['b_jz'])
 
-	#print(table_queries[0])
+	#sodanca_purchase_plan
 	table_queries[1] = """
 		-- Create purchase plan table to be used by POG
 		DROP TABLE IF EXISTS public.sodanca_purchase_plan;
@@ -623,6 +625,7 @@ def create_tables(conn, companycode):
 		  IS 'Reset nightly, used by stock purchase planner';""".format(
 			login=config[companycode]['login'])
 
+	#sodanca_purchase_plan_date
 	table_queries[2] = """
 		CREATE TABLE IF NOT EXISTS public.sodanca_purchase_plan_date (
 		  ship_date date NOT NULL,
@@ -634,8 +637,9 @@ def create_tables(conn, companycode):
 		  OWNER TO {login};
 		COMMENT ON TABLE public.sodanca_purchase_plan_date
 		  IS 'Updated via function sd_update_pplan_date';
-	""".format(login=config[companycode]['login'])
+		""".format(login=config[companycode]['login'])
 
+	#sodanca_shipment_schedule
 	table_queries[3] = """
 		CREATE TABLE IF NOT EXISTS public.sodanca_shipment_schedule
 		(
@@ -652,7 +656,7 @@ def create_tables(conn, companycode):
 
 		ALTER TABLE public.sodanca_shipment_schedule
 		    OWNER to {login};
-	""".format(login=config[companycode]['login'])
+			""".format(login=config[companycode]['login'])
 
 	#print(table_queries[0]) #DEBUG
 	logfilename = config[companycode]['logfilename']
@@ -669,8 +673,9 @@ def create_tables(conn, companycode):
 		raise
 
 def create_functions(conn,companycode):
-	functions_query = ['']*8
+	functions_query = ['']*9
 
+	# Quantity Committed
 	functions_query[0] = """
 		-- Quantity Committed
 		CREATE OR REPLACE FUNCTION public.sd_qcomm(
@@ -704,11 +709,9 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_qcomm(integer, date, date)
 			OWNER TO {login};
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+		""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	# for function_query in functions_query:
-	# 	print('function_query',function_query) #DEBUG
-
+	# Quantity on order
 	functions_query[1] = """
 		-- Quantity on order
 		CREATE OR REPLACE FUNCTION public.sd_qoo(
@@ -742,11 +745,9 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_qoo(integer, date, date)
 			OWNER TO {login};
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+		""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	# for function_query in functions_query:
-	# 	print('function_query',function_query) #DEBUG
-
+	# Quantity Sold
 	functions_query[2] = """
 		-- Quantity Sold
 		CREATE OR REPLACE FUNCTION public.sd_qs(
@@ -780,10 +781,9 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_qs(integer, date, date)
 			OWNER TO {login};
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+		""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	# for function_query in functions_query:
-	# 	print('function_query',function_query) #DEBUG
+	# Quantity Sold Last year
 	functions_query[3] = """
 	    -- Quantity Sold Last year
 	    CREATE OR REPLACE FUNCTION public.sd_qs_prev_yr(
@@ -814,8 +814,9 @@ def create_functions(conn,companycode):
 
 	    ALTER FUNCTION public.sd_qs(integer, date, date)
 	        OWNER TO {login};
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+		""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	# Quantity on hand
 	functions_query[4] = """
 		-- Quantity on hand
 		CREATE OR REPLACE FUNCTION sd_qoh(pid int) RETURNS decimal AS
@@ -840,10 +841,9 @@ def create_functions(conn,companycode):
 		$$ LANGUAGE SQL;
 
 		ALTER FUNCTION public.sd_qoh(integer) OWNER TO {login};
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+		""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	#print('functions_query[4]',functions_query[4]) #DEBUG
-
+	# Quantity on hand expected
 	functions_query[5] = """
 		-- Quantity on hand expected
 		CREATE OR REPLACE FUNCTION public.sd_expected_onhand( pid integer, start_date date) RETURNS numeric
@@ -854,10 +854,9 @@ def create_functions(conn,companycode):
 		$BODY$;
 
 		ALTER FUNCTION public.sd_expected_onhand(integer, date) OWNER TO {login};
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
+		""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	#print('functions_query[5]',functions_query[5]) #DEBUG
-
+	# Sales trend
 	functions_query[6] = """
 		-- Sales trend
 		CREATE OR REPLACE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
@@ -866,7 +865,10 @@ def create_functions(conn,companycode):
 		$$ LANGUAGE SQL;
 
 		ALTER FUNCTION public.sd_sales_trend(integer) OWNER TO {login};
+		""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
+	# Quantity to order - Purchase planner
+	functions_query[7] = """
 		-- Quantity to order - Purchase planner
 		CREATE OR REPLACE FUNCTION public.sd_quantity_to_order(
 			pid integer,
@@ -906,10 +908,11 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_quantity_to_order_no_hist(integer, date, date)
 			OWNER TO {login};
+		""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
 
-	""".format(wh_stock = 12, customers = 9, supplier = 8, login = config[companycode]['login'])
-
-	functions_query[7] = """
+	# sd_update_pplan_date
+	functions_query[8] = """
+		--sd_update_pplan_date
 		CREATE OR REPLACE FUNCTION sd_update_pplan_date(sdate date default '1970-01-01' ) RETURNS integer AS $$
 		DECLARE
 			a_count integer;
@@ -933,7 +936,7 @@ def create_functions(conn,companycode):
 
 		ALTER FUNCTION public.sd_update_pplan_date(date)
 		    OWNER TO {login};
-	""".format(login = config[companycode]['login'])
+		""".format(login = config[companycode]['login'])
 
 			#config[companycode]['login']
 			#print('functions_query[6]',functions_query[6]) #DEBUG
