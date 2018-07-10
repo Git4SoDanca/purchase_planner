@@ -15,5 +15,5 @@ SELECT 	sd_qoh(const.product_id) as on_hand,
 		sd_expected_onhand(const.product_id,const.shipment_date) as expected_on_hand,
 		sd_quantity_to_order(const.product_id,const.shipment_date,const.ship_window) as qty_to_order,
 		COALESCE(sd_expected_onhand(const.product_id,const.shipment_date),0) as expected_on_hand_2,
-		GREATEST(COALESCE(sd_qs_prev_yr(const.product_id,const.shipment_date,const.ship_window),0),COALESCE(sd_qcomm(const.product_id,const.shipment_date,const.ship_window),0)-sd_expected_onhand(const.product_id,const.shipment_date) AS qty_to_order2
+		GREATEST(COALESCE(sd_qs_prev_yr(const.product_id,const.shipment_date,const.ship_window),0),COALESCE(sd_qcomm(const.product_id,const.shipment_date,const.ship_window),0))-sd_expected_onhand(const.product_id,const.shipment_date) AS qty_to_order2
 		FROM const

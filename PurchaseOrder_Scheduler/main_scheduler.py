@@ -726,7 +726,7 @@ def create_functions(conn,companycode):
 			CASE
 				WHEN sum(stock_move.product_qty) != 0
 				THEN sum(stock_move.product_qty)
-				ELSE 0.0 END
+			ELSE 0.0 END
 			AS on_order_total
 
 		sum(stock_move.product_qty) AS on_order_total
@@ -1349,6 +1349,10 @@ def run_all(conn , companycode):
 		create_order(conn, 'N', 'A', plan_period_a, companycode)
 		create_order(conn, 'N', 'B', plan_period_b, companycode)
 		create_order(conn, 'N', 'C', plan_period_b, companycode)
+		create_order(conn, 'H', 'A', plan_period_a, companycode)
+		create_order(conn, 'H', 'B', plan_period_b, companycode)
+		create_order(conn, 'H', 'C', plan_period_c, companycode)
+		create_order(conn, 'H', 'D', plan_period_d, companycode)
 		create_order(conn, 'R', 'A', plan_period_a, companycode)
 		create_order(conn, 'R', 'B', plan_period_b, companycode)
 		create_order(conn, 'R', 'C', plan_period_c, companycode)
