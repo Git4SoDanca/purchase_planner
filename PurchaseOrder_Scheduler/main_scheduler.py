@@ -684,7 +684,12 @@ def create_functions(conn,companycode):
 			VOLATILE
 		AS $BODY$
 
-		SELECT sum(stock_move.product_qty) AS product_committed_total
+		SELECT
+			CASE
+				WHEN sum(stock_move.product_qty) != 0
+				THEN sum(stock_move.product_qty)
+				ELSE 0.0 END
+			AS product_committed_total
 		FROM stock_move
 		WHERE
 			stock_move.location_dest_id = {customers}
@@ -717,7 +722,14 @@ def create_functions(conn,companycode):
 			VOLATILE
 		AS $BODY$
 
-		SELECT sum(stock_move.product_qty) AS on_order_total
+		SELECT
+			CASE
+				WHEN sum(stock_move.product_qty) != 0
+				THEN sum(stock_move.product_qty)
+				ELSE 0.0 END
+			AS on_order_total
+
+		sum(stock_move.product_qty) AS on_order_total
 		FROM stock_move
 		WHERE
 			stock_move.location_dest_id = {wh_stock}
@@ -754,8 +766,8 @@ def create_functions(conn,companycode):
 			CASE
 				WHEN sum(stock_move.product_qty) != 0
 				THEN sum(stock_move.product_qty)
-				ELSE 0 END
-				AS on_order_total
+				ELSE 0.0 END
+				AS sold_total
 		FROM stock_move
 		WHERE
 			stock_move.location_dest_id = {customers}
@@ -789,7 +801,7 @@ def create_functions(conn,companycode):
 
 	    SELECT
 	    	CASE
-	        	WHEN sum(stock_move.product_qty) != 0 THEN sum(stock_move.product_qty) ELSE 0 END AS on_order_total
+	        	WHEN sum(stock_move.product_qty) != 0 THEN sum(stock_move.product_qty) ELSE 0.0 END AS sold_last_year_total
 	    FROM stock_move
 	    WHERE
 	    	stock_move.location_dest_id = 9
@@ -870,9 +882,7 @@ def create_functions(conn,companycode):
 		    VOLATILE
 
 		AS $BODY$
-
-		SELECT GREATEST(sd_qs_prev_yr($1,$2,$3),sd_qcomm($1,$2,$3))-sd_expected_onhand($1,$2) AS qty_to_order from product_product
-
+		SELECT GREATEST(COALESCE(sd_qs_prev_yr($1,$2,$3),0),COALESCE(sd_qcomm($1,$2,$3),0))-sd_expected_onhand($1,$2) AS qty_to_order from product_product
 		$BODY$;
 
 		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
