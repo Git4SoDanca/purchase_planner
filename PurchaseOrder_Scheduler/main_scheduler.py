@@ -724,12 +724,10 @@ def create_functions(conn,companycode):
 
 		SELECT
 			CASE
-				WHEN sum(stock_move.product_qty) != 0
-				THEN sum(stock_move.product_qty)
+			WHEN sum(stock_move.product_qty) != 0
+			THEN sum(stock_move.product_qty)
 			ELSE 0.0 END
 			AS on_order_total
-
-		sum(stock_move.product_qty) AS on_order_total
 		FROM stock_move
 		WHERE
 			stock_move.location_dest_id = {wh_stock}
