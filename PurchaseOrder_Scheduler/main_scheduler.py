@@ -882,7 +882,7 @@ def create_functions(conn,companycode):
 		    VOLATILE
 
 		AS $BODY$
-		SELECT GREATEST(COALESCE(sd_qs_prev_yr($1,$2,$3),0),COALESCE(sd_qcomm($1,($2-'6 months'::interval)::date,$3),0))-sd_expected_onhand($1,$2) AS qty_to_order from product_product
+		SELECT GREATEST(COALESCE(sd_qs_prev_yr($1,$2,$3),0),COALESCE(sd_qcomm($1,$2,$3),0))-sd_expected_onhand($1,$2) AS qty_to_order from product_product
 		$BODY$;
 
 		ALTER FUNCTION public.sd_quantity_to_order(integer, date, date)
