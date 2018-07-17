@@ -5,7 +5,10 @@
 
 import psycopg2
 import datetime
+import dateutil
 from dateutil import rrule
+from datetime import date
+from dateutil.relativedelta import relativedelta
 import math
 import configparser
 import os,sys,getopt
@@ -128,9 +131,9 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 			except Exception as e:
 				log_str = 'Cannot define rush window dates. ERR:011 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-
 				log_entry(logfilename, log_str+'\n'+str(e))
 				raise
+
 		elif order_type == 'H':
 			lead_time = int(config[companycode]['lead_normal'])
 			initial_regular_ship_date = now
@@ -170,9 +173,11 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			product_count = cur.rowcount
 			product_list = cur.fetchall()
 
-		except Exception:
-			log_entry(logfilename,"I can't execute query. ERR:002\n")
-
+		except Exception as e:
+			log_str = "ERR:002 - Cannot query product list.\n"
+			log_str += str(e)
+			log_entry(logfilename,log_str)
+			raise Exception
 			pass
 
 		for product in product_list:
@@ -214,28 +219,22 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			cur.execute(qto_query) #cur3
 
 			try:
-
 				cur.execute(qto_query) #cur3
 				product_qto = cur.fetchall()
 				# if product_qto[0][0] > 0:
 					# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
 					# print("Quantity to order: {0}".format(product_qto[0][0])) # DEBUG
 
-			except Exception:
-				log_entry(logfilename,"I can't execute query. ERR:003\n")
+			except Exception as e:
+				log_str = "ERR:003 - Cannot query quantity to order.\n"
+				log_str += str(e)
+				log_entry(logfilename,log_str)
 				raise Exception
 				pass
 
 			qto_qval = product_qto[0][0]
 
 			if product_grade == 'C' and order_type == 'N' :
-				# try:
-				# 	cur2.execute(qcomm_query)
-				# 	qcomm_qval = cur2.fetchone()
-				# 	cur2.close()
-				# except Exception as e:
-				# 	log_str= 'ERR:116 - Cannot query qcomm for C item'
-
 				qcomm_qval = product_qto[0][1]
 				qcomm_qval_nh = product_qto[0][2]
 
@@ -250,9 +249,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			else:
 				qty_2_ord = qto_qval
 
-			# if 1: ### TEST
 			if qty_2_ord > 0: ### Production
-			# print(start_date,vendor[0],product_template_name,product_name, product_grade,product_qto[0][0], qto_query)
 
 				prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{3}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
 				#Still missing box_capacity which should come here maybe as a function or a query
@@ -260,8 +257,6 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				try:
 					cur.execute(prod_details_query) #cur3
 					prod_details = cur.fetchall()
-
-					#print('DEBUG prod_details assigning')
 
 					qto=prod_details[0][0]
 					qoo=prod_details[0][1]
@@ -271,9 +266,6 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					qeoh=prod_details[0][5]
 					qoh=prod_details[0][6]
 					qst=prod_details[0][7]
-
-					#print('DEBUG prod_details assignments: {0},{1},{2},{3},{4},{5},{6},{7}'.format(qto,qoo,qoop,qcomm,qspy,qeoh,qoh,qst))
-					# Rounding qty to order
 
 					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
 					if product_grade == 'C':
@@ -294,6 +286,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					log_entry(logfilename,log_str)
 					raise Exception
 					pass
+
 				if vendor_parent != 0:
 					product_vendor = vendor_parent
 					product_group = vendor[0]
@@ -316,9 +309,12 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					cur2.execute(insert_query)
 					conn.commit()
 
-				except Exception:
-					log_entry(logfilename,"Cannot insert results. ERR:005\n")
-
+				except Exception as e:
+					log_str = "ERR:005 - Cannot insert into purchase_plan table.\n"
+					log_str += str(e)
+					log_entry(logfilename,log_str)
+					raise Exception
+					pass
 
 	cur.close()
 	cur2.close()
@@ -326,6 +322,160 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 	run_time = now_finish-now
 	log_str="Ending run   -- order_type: {0} Grade: {1} - {2}\nRun time: {3}".format(order_type, product_grade, (now_finish.strftime('%H:%M:%S - %Y-%m-%d')), str(run_time))
 
+	log_entry(logfilename,log_str)
+
+def create_tights_order(conn, companycode):
+
+	logfilename = config[companycode]['logfilename']
+
+	# database cursor definitions
+	cur = conn.cursor()
+	cur2 = conn.cursor()
+
+	now = datetime.datetime.now()
+
+	now_minus_6mo = (datetime.datetime.now()-datetime.timedelta(weeks = 26)).strftime('%Y-%m-%d')
+	# print(now, now_minus_6mo)
+
+	# TODO need to add check if order has already been placed for current purchasing period
+
+	log_str = "Starting run -- Tights Order: {0}".format(now.strftime('%H:%M:%S - %Y-%m-%d'))
+	log_entry(logfilename,log_str)
+
+	product_vendor = config[companycode]['vendor_tights']
+	categ_tights = config[companycode]['categ_tights']
+
+	product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
+	  product_product.id, sodanca_stock_control.grade,
+	  sodanca_stock_control.min_stock, sodanca_stock_control.max_stock, sodanca_stock_control.order_mod --, sodanca_stock_control.lead_time
+	FROM product_supplierinfo
+	LEFT JOIN product_template ON product_template.id = product_supplierinfo.product_id
+	LEFT JOIN product_product ON product_supplierinfo.product_id = product_product.product_tmpl_id
+	LEFT JOIN sodanca_stock_control ON sodanca_stock_control.id = product_product.id
+	LEFT JOIN pricelist_partnerinfo ON pricelist_partnerinfo.suppinfo_id = product_supplierinfo.id
+	-- LEFT JOIN res_partner ON res_partner.id = product_supplierinfo.name
+	WHERE product_template.procure_method = 'make_to_stock'
+	AND product_template.purchase_ok = true
+	AND product_template.active = true
+	AND product_product.active = true
+	AND product_product.discontinued_product = false
+	AND product_product.procure_method = 'make_to_stock'
+	AND product_supplierinfo.name = {0}
+	""".format(product_vendor)
+	# print(vendor)
+
+	try:
+	# print(product_list_query)
+		cur.execute(product_list_query)
+		product_count = cur.rowcount
+		product_list = cur.fetchall()
+
+	except Exception as e:
+		log_str = "ERR:116 - Cannot execute product list query.\n"
+		log_str += str(e)
+		log_entry(logfilename,log_str)
+		raise Exception
+		pass
+
+	for product in product_list:
+		#Generating regular purchase orders
+		product_template_id = product[0]
+		product_template_name = product[1]
+		vendor_cost = product[2]
+		category_id = product[3]
+		product_name = product[4]
+		product_id = product[5]
+		product_grade = product[6]
+		min_stock = product[7]
+		max_stock = product[8]
+		order_mod = product[9]
+		# lead_time = product[10]
+
+		purchase_period = int(config[companycode]['lead_tights']) #in MONTHS
+		# print(product)
+		# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
+		# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
+
+		now_date = datetime.datetime.now()
+		start_date = (now_date + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
+		end_date = (now_date + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
+		start_prev_year = (now_date - relativedelta(years =- 1)).strftime('%Y-%m-01')
+		end_prev_year = (now_date - relativedelta(months =- 11)).strftime('%Y-%m-%d')
+
+		qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+		# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
+		# log_entry(logfilename,log_str)
+		# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
+		cur.execute(qto_query) #cur3
+
+		try:
+
+			cur.execute(qto_query) #cur3
+			product_qto = cur.fetchall()
+			# if product_qto[0][0] > 0:
+				# print("vendor : {0} ,product_template_name: {1}, product_name: {2}, product_grade: {3}, qto_query: {4}".format(vendor, product_template_name, product_name, product_grade, qto_query)) # DEBUG
+				# print("Quantity to order: {0}".format(product_qto[0][0])) # DEBUG
+
+		except Exception as e:
+			log_str = "ERR:117 - Cannot execute quantity to order query.\n"
+			log_str += str(e)
+			log_entry(logfilename,log_str)
+			raise Exception
+			pass
+
+		qty_2_ord = product_qto[0][0]
+
+		if qty_2_ord > 0: ### Production
+
+			prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{3}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
+			#Still missing box_capacity which should come here maybe as a function or a query
+			try:
+				cur.execute(prod_details_query) #cur3
+				prod_details = cur.fetchall()
+				qto=prod_details[0][0]
+				qoo=prod_details[0][1]
+				qoop=prod_details[0][2]
+				qcomm=prod_details[0][3]
+				qspy=prod_details[0][4]
+				qeoh=prod_details[0][5]
+				qoh=prod_details[0][6]
+				qst=prod_details[0][7]
+
+				qto_rounded = roundup(qto,order_mod)
+
+			except Exception as e:
+				log_str = "ERR:118 - Cannot execute product details query.\n"
+				log_str += str(e)
+				log_entry(logfilename,log_str)
+				raise Exception
+				pass
+
+			product_group = product_vendor
+			order_type = 'T'
+
+			insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
+			product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
+			expected_on_hand, qty_on_hand, sales_trend, purchase_price) VALUES (default, '{20}', {0}, {1}, '{2}'::date, '{3}'::date, {4}, '{5}', {6}, '{7}', {8},
+			'{9}', {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {21})""".format(product_vendor, product_group, now.strftime('%Y-%m-%d'), start_date,
+			product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, qto, qto_rounded, qoo, qoop, qcomm, qspy,
+			qeoh, qoh, qst, order_type, vendor_cost)
+
+			try:
+				cur2.execute(insert_query)
+				conn.commit()
+
+			except Exception as e:
+				log_str = "ERR:119 - Cannot insert into purchase_plan table.\n"
+				log_str += str(e)
+				log_entry(logfilename,log_str)
+				raise Exception
+				pass
+
+	cur.close()
+	cur2.close()
+	now_finish = datetime.datetime.now()
+	run_time = now_finish-now
+	log_str="Ending run -- Tights order: {0}\nRun time: {1}".format(now_finish.strftime('%H:%M:%S - %Y-%m-%d'), str(run_time))
 	log_entry(logfilename,log_str)
 
 def drop_results_table(conn, companycode):
@@ -1348,15 +1498,16 @@ def run_all(conn , companycode):
 	plan_period_d = int(config[companycode]['plan_period_d'])
 
 	try:
-		create_order(conn, 'N', 'A', plan_period_a, companycode)
-		create_order(conn, 'N', 'B', plan_period_b, companycode)
-		create_order(conn, 'N', 'C', plan_period_b, companycode)
-		create_order(conn, 'R', 'A', plan_period_a, companycode)
-		create_order(conn, 'R', 'B', plan_period_b, companycode)
-		create_order(conn, 'R', 'C', plan_period_c, companycode)
-		create_order(conn, 'R', 'D', plan_period_d, companycode)
-
-		create_hotstock_order(conn, companycode)
+		# create_order(conn, 'N', 'A', plan_period_a, companycode)
+		# create_order(conn, 'N', 'B', plan_period_b, companycode)
+		# create_order(conn, 'N', 'C', plan_period_b, companycode)
+		# create_order(conn, 'R', 'A', plan_period_a, companycode)
+		# create_order(conn, 'R', 'B', plan_period_b, companycode)
+		# create_order(conn, 'R', 'C', plan_period_c, companycode)
+		# create_order(conn, 'R', 'D', plan_period_d, companycode)
+		#
+		# create_hotstock_order(conn, companycode)
+		create_tights_order(conn,companycode)
 
 	except KeyboardInterrupt:
 		print("Interrupted by user")
@@ -1371,7 +1522,8 @@ def run_all(conn , companycode):
 def manual_run():
 	# os.system('clear')
 
-	types_list = ['R','N','H']
+	types_list = ['R','N','H','T']
+	types_descrition = ['Rush','Normal','Hot stock', 'Tights']
 	grades_list = ['A','B','C','D']
 	print('\nSelect company to to run:')
 
@@ -1533,8 +1685,8 @@ def manual_run():
 	elif run_choice == 't':
 		while True:
 			print('Select order type to process:')
-			for order_type in types_list:
-				print(order_type)
+			for k in range(0, len(types_list)):
+				print("[{0}] - {1}".format(types_list[k],types_descrition[k]))
 			choice = input(" >> ")
 			order_type = choice.upper()
 
@@ -1589,6 +1741,15 @@ def manual_run():
 			log_str = 'Manual run - Starting Hot stock ordering: {}'.format(start_clock.strftime('%H:%M:%S - %Y-%m-%d'))
 			log_entry(logfilename,log_str)
 			create_hotstock_order(conn, companycode)
+			run_time = datetime.datetime.now()- start_clock
+			log_entry(logfilename,'Runtime: '+str(run_time))
+			log_entry(logfilename,log_str)
+			log_entry(logfilename,"="*80+"\n")
+		elif order_type == 'T':
+			start_clock = datetime.datetime.now()
+			log_str = 'Manual run - Starting Tights ordering: {}'.format(start_clock.strftime('%H:%M:%S - %Y-%m-%d'))
+			log_entry(logfilename,log_str)
+			create_tights_order(conn, companycode)
 			run_time = datetime.datetime.now()- start_clock
 			log_entry(logfilename,'Runtime: '+str(run_time))
 			log_entry(logfilename,log_str)
