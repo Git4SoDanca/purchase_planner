@@ -451,6 +451,7 @@ def create_tights_order(conn, companycode):
 				pass
 
 			product_group = product_vendor
+			order_type = 'T'
 
 			insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
 			product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
