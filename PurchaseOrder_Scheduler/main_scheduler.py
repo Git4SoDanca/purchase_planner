@@ -5,6 +5,8 @@
 
 import psycopg2
 import datetime
+from dateutil.relativedelta
+import relativedelta
 from dateutil import rrule
 import math
 import configparser
@@ -395,10 +397,10 @@ def create_tights_order(conn, companycode):
 		# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
 
 		now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
-		start_date = (now_date+datetime.timedelta(months = purchase_period)).strftime('%Y-%m-01')
-		end_date = (start_date + datetime.timedelta(monts = purchase_period+1)).strftime('%Y-%m-01')
-		start_prev_year = (start_date - datetime.timedelta(years = 1)).strftime('%Y-%m-%d')
-		end_prev_year = (end_date - datetime.timedelta(years = 1)).strftime('%Y-%m-%d')
+		start_date = (now_date + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
+		end_date = (start_date + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
+		start_prev_year = (start_date - relativedelta(years =- 1)).strftime('%Y-%m-%d')
+		end_prev_year = (end_date - relativedelta(years =- 1)).strftime('%Y-%m-%d')
 
 		qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 		# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
