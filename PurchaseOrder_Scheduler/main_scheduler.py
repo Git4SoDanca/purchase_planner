@@ -7,7 +7,8 @@ import psycopg2
 import datetime
 import dateutil
 from dateutil import rrule
-from dateutil import relativedelta
+from datetime import date
+from dateutil.relativedelta import relativedelta
 import math
 import configparser
 import os,sys,getopt
