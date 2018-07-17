@@ -342,7 +342,7 @@ def create_tights_order(conn, companycode):
 	log_str = "Starting run -- Tights Order: {0}".format(now.strftime('%H:%M:%S - %Y-%m-%d'))
 	log_entry(logfilename,log_str)
 
-	vendor_tights = config[companycode]['vendor_tights']
+	product_vendor = config[companycode]['vendor_tights']
 	categ_tights = config[companycode]['categ_tights']
 
 	product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
@@ -361,7 +361,7 @@ def create_tights_order(conn, companycode):
 	AND product_product.discontinued_product = false
 	AND product_product.procure_method = 'make_to_stock'
 	AND product_supplierinfo.name = {0}
-	""".format(vendor_tights)
+	""".format(product_vendor)
 	# print(vendor)
 
 	try:
@@ -449,12 +449,8 @@ def create_tights_order(conn, companycode):
 				log_entry(logfilename,log_str)
 				raise Exception
 				pass
-			if vendor_parent != 0:
-				product_vendor = vendor_parent
-				product_group = vendor[0]
-			else:
-				product_vendor = vendor[0]
-				product_group = vendor[0]
+
+			product_group = product_vendor
 
 			insert_query = """INSERT INTO sodanca_purchase_plan (id, type, vendor, vendor_group, creation_date, expected_date, template_id, template_name, product_id,
 			product_name, product_category_id, product_grade, order_mod, qty_2_ord, qty_2_ord_adj, qty_on_order, qty_on_order_period, qty_committed, qty_sold,
