@@ -336,7 +336,7 @@ def create_tights_order(conn, companycode):
 
 	# TODO need to add check if order has already been placed for current purchasing period
 
-	log_str = "Starting run -- Tights Order: {0}".format(now.strftime('%H:%M:%S - %Y-%m-%d')))
+	log_str = "Starting run -- Tights Order: {0}".format(now.strftime('%H:%M:%S - %Y-%m-%d'))
 	log_entry(logfilename,log_str)
 
 	vendor_tights = config[companycode]['vendor_tights']
