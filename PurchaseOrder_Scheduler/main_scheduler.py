@@ -392,12 +392,11 @@ def create_tights_order(conn, companycode):
 		# lead_time = product[10]
 
 		purchase_period = int(config[companycode]['lead_tights']) #in MONTHS
-
 		# print(product)
 		# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
 		# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
 
-		now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
+		now_date = datetime.datetime.now()
 		start_date = (now_date + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
 		end_date = (start_date + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
 		start_prev_year = (start_date - relativedelta(years =- 1)).strftime('%Y-%m-%d')
