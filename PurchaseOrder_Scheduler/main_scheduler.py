@@ -400,7 +400,7 @@ def create_tights_order(conn, companycode):
 		start_date = (now_date + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
 		end_date = (now_date + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
 		start_prev_year = (now_date - relativedelta(years =- 1)).strftime('%Y-%m-01')
-		end_prev_year = (now_date - relativedelta(months =- 11)).strftime('%Y-%m-%d')
+		end_prev_year = (now_date - relativedelta(months =- 11)).strftime('%Y-%m-01')
 
 		qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 		# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
@@ -1498,15 +1498,15 @@ def run_all(conn , companycode):
 	plan_period_d = int(config[companycode]['plan_period_d'])
 
 	try:
-		# create_order(conn, 'N', 'A', plan_period_a, companycode)
-		# create_order(conn, 'N', 'B', plan_period_b, companycode)
-		# create_order(conn, 'N', 'C', plan_period_b, companycode)
-		# create_order(conn, 'R', 'A', plan_period_a, companycode)
-		# create_order(conn, 'R', 'B', plan_period_b, companycode)
-		# create_order(conn, 'R', 'C', plan_period_c, companycode)
-		# create_order(conn, 'R', 'D', plan_period_d, companycode)
-		#
-		# create_hotstock_order(conn, companycode)
+		create_order(conn, 'N', 'A', plan_period_a, companycode)
+		create_order(conn, 'N', 'B', plan_period_b, companycode)
+		create_order(conn, 'N', 'C', plan_period_b, companycode)
+		create_order(conn, 'R', 'A', plan_period_a, companycode)
+		create_order(conn, 'R', 'B', plan_period_b, companycode)
+		create_order(conn, 'R', 'C', plan_period_c, companycode)
+		create_order(conn, 'R', 'D', plan_period_d, companycode)
+
+		create_hotstock_order(conn, companycode)
 		create_tights_order(conn,companycode)
 
 	except KeyboardInterrupt:
