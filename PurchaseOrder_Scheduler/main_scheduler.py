@@ -398,9 +398,9 @@ def create_tights_order(conn, companycode):
 
 		now_date = datetime.datetime.now()
 		start_date = (now_date + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
-		end_date = (start_date + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
-		start_prev_year = (start_date - relativedelta(years =- 1)).strftime('%Y-%m-%d')
-		end_prev_year = (end_date - relativedelta(years =- 1)).strftime('%Y-%m-%d')
+		end_date = (now_date + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
+		start_prev_year = (now_date - relativedelta(years =- 1)).strftime('%Y-%m-01')
+		end_prev_year = (now_date - relativedelta(months =- 11)).strftime('%Y-%m-%d')
 
 		qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 		# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
