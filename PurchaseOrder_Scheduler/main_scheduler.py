@@ -216,7 +216,6 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			cur.execute(qto_query) #cur3
 
 			try:
-
 				cur.execute(qto_query) #cur3
 				product_qto = cur.fetchall()
 				# if product_qto[0][0] > 0:
@@ -284,6 +283,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					log_entry(logfilename,log_str)
 					raise Exception
 					pass
+
 				if vendor_parent != 0:
 					product_vendor = vendor_parent
 					product_group = vendor[0]
@@ -306,13 +306,12 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					cur2.execute(insert_query)
 					conn.commit()
 
-		except Exception as e:
-			log_str = "ERR:005 - Cannot insert into purchase_plan table.\n"
-			log_str += str(e)
-			log_entry(logfilename,log_str)
-			raise Exception
-			pass
-
+				except Exception as e:
+					log_str = "ERR:005 - Cannot insert into purchase_plan table.\n"
+					log_str += str(e)
+					log_entry(logfilename,log_str)
+					raise Exception
+					pass
 
 	cur.close()
 	cur2.close()
