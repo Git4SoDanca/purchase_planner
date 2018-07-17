@@ -5,6 +5,7 @@
 
 import psycopg2
 import datetime
+import dateutil
 from dateutil import rrule
 from dateutil import relativedelta
 import math
