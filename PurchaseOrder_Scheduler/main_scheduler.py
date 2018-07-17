@@ -389,7 +389,7 @@ def create_tights_order(conn, companycode):
 		order_mod = product[9]
 		# lead_time = product[10]
 
-		purchase_period = config[companycode]['lead_tights'] #in MONTHS
+		purchase_period = int(config[companycode]['lead_tights']) #in MONTHS
 
 		# print(product)
 		# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
