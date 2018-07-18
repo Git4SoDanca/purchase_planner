@@ -20,3 +20,22 @@ I am unable to connect to the database, check companycode ERR:111
 
 permission denied for schema public
 
+
+
+Setup started - 16:54:46 - 2018-07-18
+
+Functions created successfully.
+Purchase plan tables created successfully.
+
+
+Process started - 16:55:08 - 2018-07-18
+
+sodanca_purchase_plan was dropped.
+Running all grades and order types - started at:16:55:08 - 2018-07-18
+Starting run -- order_type: N Grade: A - 16:55:08 - 2018-07-18
+Something unexpected happened. ERR:007
+
+unsupported operand type(s) for +: 'int' and 'datetime.timedelta'
+I am unable to connect to the database ERR:101
+
+unsupported operand type(s) for +: 'int' and 'datetime.timedelta'
