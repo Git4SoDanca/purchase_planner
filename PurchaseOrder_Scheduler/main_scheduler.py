@@ -342,10 +342,17 @@ def create_tights_order(conn, companycode):
 
 	product_vendor = config[companycode]['vendor_tights']
 	categ_tights = config[companycode]['categ_tights']
+
 	# TODO need to add check if order has already been placed for current purchasing period
 
-	
+	now_date = datetime.datetime.now().strftime('%Y-%m-%d')
+	start_date = (now + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
+	end_date = (now + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
+	start_prev_year = (now - relativedelta(years =- 1)).strftime('%Y-%m-01')
+	end_prev_year = (now - relativedelta(months =- 11)).strftime('%Y-%m-01')
 
+	print('DEBUG - Working dates: {},{},{},{},{}'.format(now_date,start_date,end_date,start_prev_year,end_prev_year))
+	check_existing_order_query = "SELECT * FROM "
 
 	product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
 	  product_product.id, sodanca_stock_control.grade,
@@ -397,12 +404,6 @@ def create_tights_order(conn, companycode):
 		# print(product)
 		# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
 		# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
-
-		now_date = datetime.datetime.now()
-		start_date = (now_date + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
-		end_date = (now_date + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
-		start_prev_year = (now_date - relativedelta(years =- 1)).strftime('%Y-%m-01')
-		end_prev_year = (now_date - relativedelta(months =- 11)).strftime('%Y-%m-01')
 
 		qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 		# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
@@ -1282,6 +1283,11 @@ def create_hotstock_order(conn, companycode):
 	now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 	logfilename = config[companycode]['logfilename']
 
+	now_start = datetime.datetime.now()
+
+	log_str = "Starting run -- Hot stock {0}".format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+	log_entry(logfilename,log_str)
+
 	try:
 		cur.execute(hotstock_query)
 		hs_lines = cur.fetchall()
@@ -1421,6 +1427,10 @@ def create_hotstock_order(conn, companycode):
 				log_str = "Error updating orders with hot stock quantities. ERR:107 {0}\n\n{1}".format(now, str(e))
 				log_entry(logfilename, log_str)
 				raise
+
+	now_finish = datetime.datetime.now()
+	run_time = now_finish-now_start
+	log_str="Ending run -- Hot Stock {0}\nRun time: {1}".format(now_finish.strftime('%H:%M:%S - %Y-%m-%d'), str(run_time))
 
 	cur.close()
 
