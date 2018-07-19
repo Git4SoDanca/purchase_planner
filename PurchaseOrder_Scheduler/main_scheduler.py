@@ -15,21 +15,34 @@ import os,sys,getopt
 import poplib
 import email
 import csv
+import logging
+import time
+from logging.handlers import RotatingFileHandler
+
+#----------------------------------------------------------------------
 
 class reg(object):
 	def __init__(self, cursor, registro):
 		for (attr, val) in zip((d[0] for d in cursor.description),registro) :
 			setattr(self, attr, val)
 
+def roundup(x,y):
+  return int(math.ceil(x/y))*y
+
+# def rotate_log(logfilename):
+#     logger = logging.getLogger("Rotating Log")
+#     logger.setLevel(logging.INFO)
+#      # add a rotating handler
+#     handler = RotatingFileHandler(logfilename, maxBytes=5242880, backupCount=10)
+#     logger.addHandler(handler)
+
 def log_entry(logfile, entry_text):
+	# rotate_log(logfile)
 	print(entry_text,'\n')
 	fil = open(logfile,'a')
 	fil.write(entry_text)
 	fil.write('\n')
 	fil.close()
-
-def roundup(x,y):
-  return int(math.ceil(x/y))*y
 
 def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 	sub_cur = conn.cursor()
@@ -345,6 +358,9 @@ def create_tights_order(conn, companycode):
 
 	# TODO need to add check if order has already been placed for current purchasing period
 
+	purchase_period = int(config[companycode]['lead_tights']) #in MONTHS
+
+
 	now_date = datetime.datetime.now().strftime('%Y-%m-%d')
 	start_date = (now + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
 	end_date = (now + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
@@ -400,7 +416,6 @@ def create_tights_order(conn, companycode):
 		order_mod = product[9]
 		# lead_time = product[10]
 
-		purchase_period = int(config[companycode]['lead_tights']) #in MONTHS
 		# print(product)
 		# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
 		# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
