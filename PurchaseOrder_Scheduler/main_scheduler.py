@@ -367,8 +367,28 @@ def create_tights_order(conn, companycode):
 	start_prev_year = (now - relativedelta(years =- 1)).strftime('%Y-%m-01')
 	end_prev_year = (now - relativedelta(months =- 11)).strftime('%Y-%m-01')
 
+	check_po_query = """SELECT * FROM purchase_order WHERE minimum_planned_date >= '{0}' AND minimum_planned_date < '{1}'""".format(start_date,end_date)
+
+	try:
+	# print(product_list_query)
+		cur.execute(check_po_query)
+		po_count = cur.rowcount
+
+		if po_count > 0:
+			log_str = "Tights order already exists for delivery on period {0} to {1}.\nSkipping process.\n".format(start_date, end_date)
+			log_entry(log_str)
+			return
+		else:
+			pass
+			
+	except Exception as e:
+		log_str = "ERR:120 - Cannot execute purchase order query.\n"
+		log_str += str(e)
+		log_entry(logfilename,log_str)
+		raise Exception
+		pass
+
 	print('DEBUG - Working dates: {},{},{},{},{}'.format(now_date,start_date,end_date,start_prev_year,end_prev_year))
-	check_existing_order_query = "SELECT * FROM "
 
 	product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
 	  product_product.id, sodanca_stock_control.grade,
