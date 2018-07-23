@@ -82,7 +82,6 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 
 	return cut_off_date, ship_date, forecast_window_limit_date
 
-# def create_order(conn, order_type, product_grade, lead_time, period_length, companycode):
 def create_order(conn, order_type, product_grade, period_length, companycode):
 
 	logfilename = config[companycode]['logfilename']
@@ -380,7 +379,7 @@ def create_tights_order(conn, companycode):
 			return
 		else:
 			pass
-			
+
 	except Exception as e:
 		log_str = "ERR:120 - Cannot execute purchase order query.\n"
 		log_str += str(e)
@@ -1284,7 +1283,7 @@ def parse_attachments(conn, companycode):
 		fileobj.close()
 	cur.close()
 
-def  next_shipping_date(weekday_ship): #weekday number Monday is 0 Sunday is 6
+def next_shipping_date(weekday_ship): #weekday number Monday is 0 Sunday is 6
 	now = datetime.datetime.now()
 	# weekday_ship = 4
 	now_weekday = int(now.strftime('%w'))
@@ -1309,8 +1308,7 @@ def create_hotstock_order(conn, companycode):
 	hotstock_query = """SELECT sodanca_estoque_pulmao.* , sodanca_purchase_plan.id as PP_id, sodanca_purchase_plan.qty_2_ord as PP_q2o,
 		sodanca_purchase_plan.qty_2_ord_adj as PP_q2oAdj, sodanca_purchase_plan.*
 		FROM sodanca_estoque_pulmao LEFT JOIN sodanca_purchase_plan ON sodanca_estoque_pulmao.product_id = sodanca_purchase_plan.product_id
-		WHERE sodanca_estoque_pulmao.email_date = (SELECT MAX(email_date) FROM sodanca_estoque_pulmao) AND sodanca_purchase_plan.type = 'R'
-	"""
+		WHERE sodanca_estoque_pulmao.email_date = (SELECT MAX(email_date) FROM sodanca_estoque_pulmao) AND sodanca_purchase_plan.type = 'R' """
 
 	# print("DEBUG hotstock_query", hotstock_query)
 	cur = conn.cursor()
@@ -1384,7 +1382,14 @@ def create_hotstock_order(conn, companycode):
 				log_entry(logfilename, log_str)
 
 			try:
-				update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+				if pp_order_qty > 0:
+					update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+				elif pp_order_qty == 0:
+					update_query = """REMOVE sodanca_purchase_plan WHERE id = {0}""".format(pp_lin_id)
+				else:
+					now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+					log_str = "Updating hotstock order, quantity does not match > 0 or == 0, ERR:121 - sodanca_purchase_plan line id: {0} - {1}\n".format(pp_lin_id,now)
+					log_entry(logfilename, log_str)
 				# print('DEBUG update 1', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
