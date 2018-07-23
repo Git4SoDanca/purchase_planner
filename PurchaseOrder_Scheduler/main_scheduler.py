@@ -1385,7 +1385,7 @@ def create_hotstock_order(conn, companycode):
 				if pp_order_qty > 0:
 					update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
 				elif pp_order_qty == 0:
-					update_query = """DELETE sodanca_purchase_plan WHERE id = {0}""".format(pp_lin_id)
+					update_query = """DELETE FROM sodanca_purchase_plan WHERE id = {0}""".format(pp_lin_id)
 				else:
 					now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 					log_str = "Updating hotstock order, quantity does not match > 0 or == 0, ERR:121 - sodanca_purchase_plan line id: {0} - {1}\n".format(pp_lin_id,now)
@@ -1443,7 +1443,7 @@ def create_hotstock_order(conn, companycode):
 				if pp_order_qty > 0:
 					update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
 				elif pp_order_qty == 0:
-					update_query = """DELETE sodanca_purchase_plan WHERE id = {0}""".format(pp_lin_id)
+					update_query = """DELETE FROM sodanca_purchase_plan WHERE id = {0}""".format(pp_lin_id)
 				else:
 					now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
 					log_str = "Updating hotstock order, quantity does not match > 0 or == 0, ERR:121 - sodanca_purchase_plan line id: {0} - {1}\n".format(pp_lin_id,now)
