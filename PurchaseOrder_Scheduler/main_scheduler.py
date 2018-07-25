@@ -221,7 +221,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			if order_type == 'R' and product_grade in ['C','D'] :
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			elif order_type == 'N' and product_grade == 'C':
-				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0), COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0), COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0), COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 				# qcomm_query = "SELECT COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			else:
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
@@ -247,17 +247,12 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			qto_qval = product_qto[0][0]
 
 			if product_grade == 'C' and order_type == 'N' :
-				qcomm_qval = product_qto[0][1]
-				qcomm_qval_nh = product_qto[0][2]
-
-				if qto_qval<3 and qcomm_qval == 0:
-				# product_qto[0][0] = 0
-					qty_2_ord = 0
-				elif  qcomm_qval > 0:
-				# product_qto[0][0] = product_qto[0][1]
-					qty_2_ord = qcomm_qval_nh
-				else:
+				if qto_qval >= 3:
 					qty_2_ord = qto_qval
+				elif qto_qval < 3 and product_qto[0][1] > 0:
+					qty_2_ord = product_qto[0][1]
+				else:
+					qty_2_ord = 0
 			else:
 				qty_2_ord = qto_qval
 
