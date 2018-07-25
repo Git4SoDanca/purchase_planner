@@ -292,8 +292,10 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 						elif qto >= min_qty_2_ord_c_grade:
 							qto_rounded = qto
 						else:
+							qto = 0
 							qto_rounded = 0
 					elif product_grade == 'D':
+						qto = qcomm
 						qto_rounded = qcomm
 					else:
 						qto_rounded = roundup(qto,order_mod)
