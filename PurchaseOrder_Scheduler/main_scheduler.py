@@ -276,7 +276,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
 					if product_grade == 'C':
-						if qcomm > qspy:
+						if qto < min_qty_2_ord_c_grade and qcomm > 0:
 							prt_str = """DEBUG qcomm>qspy- Product name:{8}
 							qto:{0}
 							qoo:{1}
@@ -287,11 +287,12 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 							qoh:{6}
 							trend:{7}""".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
 							print(prt_str)
+							qto = qcomm
 							qto_rounded = qcomm
-						elif qspy < min_qty_2_ord_c_grade:
-							qto_rounded = qcomm
-						elif qspy >= min_qty_2_ord_c_grade:
-							qto_rounded = qspy
+						elif qto >= min_qty_2_ord_c_grade:
+							qto_rounded = qto
+						else:
+							qto_rounded = 0
 					elif product_grade == 'D':
 						qto_rounded = qcomm
 					else:
@@ -321,17 +322,18 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, qto, qto_rounded, qoo, qoop, qcomm, qspy,
 				qeoh, qoh, qst, order_type, vendor_cost)
 
-				# print(insert_query)
-				try:
-					cur2.execute(insert_query)
-					conn.commit()
+				# print(insert_query
+				if qto_rounded > 0:
+					try:
+						cur2.execute(insert_query)
+						conn.commit()
 
-				except Exception as e:
-					log_str = "ERR:005 - Cannot insert into purchase_plan table.\n"
-					log_str += str(e)
-					log_entry(logfilename,log_str)
-					raise Exception
-					pass
+					except Exception as e:
+						log_str = "ERR:005 - Cannot insert into purchase_plan table.\n"
+						log_str += str(e)
+						log_entry(logfilename,log_str)
+						raise Exception
+						pass
 
 	cur.close()
 	cur2.close()
@@ -380,7 +382,7 @@ def create_tights_order(conn, companycode):
 
 		if po_count > 0:
 			log_str = "Tights order already exists for delivery on period {0} to {1}.\nSkipping process.\n".format(start_date, end_date)
-			log_entry(log_str)
+			log_entry(logfilename, log_str)
 			return
 		else:
 			pass
