@@ -15,21 +15,34 @@ import os,sys,getopt
 import poplib
 import email
 import csv
+import logging
+import time
+from logging.handlers import RotatingFileHandler
+
+#----------------------------------------------------------------------
 
 class reg(object):
 	def __init__(self, cursor, registro):
 		for (attr, val) in zip((d[0] for d in cursor.description),registro) :
 			setattr(self, attr, val)
 
+def roundup(x,y):
+  return int(math.ceil(x/y))*y
+
+# def rotate_log(logfilename):
+#     logger = logging.getLogger("Rotating Log")
+#     logger.setLevel(logging.INFO)
+#      # add a rotating handler
+#     handler = RotatingFileHandler(logfilename, maxBytes=5242880, backupCount=10)
+#     logger.addHandler(handler)
+
 def log_entry(logfile, entry_text):
+	# rotate_log(logfile)
 	print(entry_text,'\n')
 	fil = open(logfile,'a')
 	fil.write(entry_text)
 	fil.write('\n')
 	fil.close()
-
-def roundup(x,y):
-  return int(math.ceil(x/y))*y
 
 def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 	sub_cur = conn.cursor()
@@ -69,7 +82,6 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 
 	return cut_off_date, ship_date, forecast_window_limit_date
 
-# def create_order(conn, order_type, product_grade, lead_time, period_length, companycode):
 def create_order(conn, order_type, product_grade, period_length, companycode):
 
 	logfilename = config[companycode]['logfilename']
@@ -105,7 +117,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 		vendor_array.append(tuple((vendor_parent,)))
 
-	# print(vendor_array[0])
+	# print('DEBUG vendor_array:',vendor_array[0])
 
 	for vendor in vendor_array:
 
@@ -209,7 +221,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			if order_type == 'R' and product_grade in ['C','D'] :
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			elif order_type == 'N' and product_grade == 'C':
-				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0), COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0), COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
+				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0), COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 				# qcomm_query = "SELECT COALESCE(sd_qcomm({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			else:
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
@@ -235,17 +247,12 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			qto_qval = product_qto[0][0]
 
 			if product_grade == 'C' and order_type == 'N' :
-				qcomm_qval = product_qto[0][1]
-				qcomm_qval_nh = product_qto[0][2]
-
-				if qto_qval<3 and qcomm_qval == 0:
-				# product_qto[0][0] = 0
-					qty_2_ord = 0
-				elif  qcomm_qval > 0:
-				# product_qto[0][0] = product_qto[0][1]
-					qty_2_ord = qcomm_qval_nh
-				else:
+				if qto_qval >= 3:
 					qty_2_ord = qto_qval
+				elif qto_qval < 3 and product_qto[0][1] > 0:
+					qty_2_ord = product_qto[0][1]
+				else:
+					qty_2_ord = 0
 			else:
 				qty_2_ord = qto_qval
 
@@ -269,13 +276,26 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
 					if product_grade == 'C':
-						if qcomm > qspy:
+						if qto < min_qty_2_ord_c_grade and qcomm > 0:
+							prt_str = """DEBUG qcomm>qspy- Product name:{8}
+							qto:{0}
+							qoo:{1}
+							qoop:{2}
+							qcomm:{3}
+							sold_prev_year:{4}
+							qeoh:{5}
+							qoh:{6}
+							trend:{7}""".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
+							print(prt_str)
+							qto = qcomm
 							qto_rounded = qcomm
-						elif qspy < min_qty_2_ord_c_grade:
-							qto_rounded = qcomm
-						elif qspy >= min_qty_2_ord_c_grade:
-							qto_rounded = qspy
+						elif qto >= min_qty_2_ord_c_grade:
+							qto_rounded = qto
+						else:
+							qto = 0
+							qto_rounded = 0
 					elif product_grade == 'D':
+						qto = qcomm
 						qto_rounded = qcomm
 					else:
 						qto_rounded = roundup(qto,order_mod)
@@ -304,17 +324,18 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 				product_template_id, product_template_name, product_id, product_name, category_id, product_grade, order_mod, qto, qto_rounded, qoo, qoop, qcomm, qspy,
 				qeoh, qoh, qst, order_type, vendor_cost)
 
-				# print(insert_query)
-				try:
-					cur2.execute(insert_query)
-					conn.commit()
+				# print(insert_query
+				if qto_rounded > 0:
+					try:
+						cur2.execute(insert_query)
+						conn.commit()
 
-				except Exception as e:
-					log_str = "ERR:005 - Cannot insert into purchase_plan table.\n"
-					log_str += str(e)
-					log_entry(logfilename,log_str)
-					raise Exception
-					pass
+					except Exception as e:
+						log_str = "ERR:005 - Cannot insert into purchase_plan table.\n"
+						log_str += str(e)
+						log_entry(logfilename,log_str)
+						raise Exception
+						pass
 
 	cur.close()
 	cur2.close()
@@ -342,10 +363,40 @@ def create_tights_order(conn, companycode):
 
 	product_vendor = config[companycode]['vendor_tights']
 	categ_tights = config[companycode]['categ_tights']
+
 	# TODO need to add check if order has already been placed for current purchasing period
 
-	
+	purchase_period = int(config[companycode]['lead_tights']) #in MONTHS
 
+
+	now_date = datetime.datetime.now().strftime('%Y-%m-%d')
+	start_date = (now + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
+	end_date = (now + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
+	start_prev_year = (now - relativedelta(years =- 1)).strftime('%Y-%m-01')
+	end_prev_year = (now - relativedelta(months =- 11)).strftime('%Y-%m-01')
+
+	check_po_query = """SELECT * FROM purchase_order WHERE minimum_planned_date >= '{0}' AND minimum_planned_date < '{1}'""".format(start_date,end_date)
+
+	try:
+	# print(product_list_query)
+		cur.execute(check_po_query)
+		po_count = cur.rowcount
+
+		if po_count > 0:
+			log_str = "Tights order already exists for delivery on period {0} to {1}.\nSkipping process.\n".format(start_date, end_date)
+			log_entry(logfilename, log_str)
+			return
+		else:
+			pass
+
+	except Exception as e:
+		log_str = "ERR:120 - Cannot execute purchase order query.\n"
+		log_str += str(e)
+		log_entry(logfilename,log_str)
+		raise Exception
+		pass
+
+	print('DEBUG - Working dates: {},{},{},{},{}'.format(now_date,start_date,end_date,start_prev_year,end_prev_year))
 
 	product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
 	  product_product.id, sodanca_stock_control.grade,
@@ -393,16 +444,9 @@ def create_tights_order(conn, companycode):
 		order_mod = product[9]
 		# lead_time = product[10]
 
-		purchase_period = int(config[companycode]['lead_tights']) #in MONTHS
 		# print(product)
 		# print('before pdate_loop', initial_regular_ship_date, forecast_window_limit_date)
 		# for pdate in rrule.rrule(rrule.WEEKLY, dtstart = initial_regular_ship_date, until = forecast_window_limit_date):
-
-		now_date = datetime.datetime.now()
-		start_date = (now_date + relativedelta(months =+ purchase_period)).strftime('%Y-%m-01')
-		end_date = (now_date + relativedelta(months =+ purchase_period+1)).strftime('%Y-%m-01')
-		start_prev_year = (now_date - relativedelta(years =- 1)).strftime('%Y-%m-01')
-		end_prev_year = (now_date - relativedelta(months =- 11)).strftime('%Y-%m-01')
 
 		qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 		# log_str = "Processing Week {0} to {1}\n".format(start_date,end_date)
@@ -1248,7 +1292,7 @@ def parse_attachments(conn, companycode):
 		fileobj.close()
 	cur.close()
 
-def  next_shipping_date(weekday_ship): #weekday number Monday is 0 Sunday is 6
+def next_shipping_date(weekday_ship): #weekday number Monday is 0 Sunday is 6
 	now = datetime.datetime.now()
 	# weekday_ship = 4
 	now_weekday = int(now.strftime('%w'))
@@ -1273,14 +1317,18 @@ def create_hotstock_order(conn, companycode):
 	hotstock_query = """SELECT sodanca_estoque_pulmao.* , sodanca_purchase_plan.id as PP_id, sodanca_purchase_plan.qty_2_ord as PP_q2o,
 		sodanca_purchase_plan.qty_2_ord_adj as PP_q2oAdj, sodanca_purchase_plan.*
 		FROM sodanca_estoque_pulmao LEFT JOIN sodanca_purchase_plan ON sodanca_estoque_pulmao.product_id = sodanca_purchase_plan.product_id
-		WHERE sodanca_estoque_pulmao.email_date = (SELECT MAX(email_date) FROM sodanca_estoque_pulmao) AND sodanca_purchase_plan.type = 'R'
-	"""
+		WHERE sodanca_estoque_pulmao.email_date = (SELECT MAX(email_date) FROM sodanca_estoque_pulmao) AND sodanca_purchase_plan.type = 'R' """
 
 	# print("DEBUG hotstock_query", hotstock_query)
 	cur = conn.cursor()
 
 	now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 	logfilename = config[companycode]['logfilename']
+
+	now_start = datetime.datetime.now()
+
+	log_str = "Starting run -- Hot stock {0}".format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+	log_entry(logfilename,log_str)
 
 	try:
 		cur.execute(hotstock_query)
@@ -1343,7 +1391,14 @@ def create_hotstock_order(conn, companycode):
 				log_entry(logfilename, log_str)
 
 			try:
-				update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+				if pp_order_qty > 0:
+					update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+				elif pp_order_qty == 0:
+					update_query = """DELETE FROM sodanca_purchase_plan WHERE id = {0}""".format(pp_lin_id)
+				else:
+					now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+					log_str = "Updating hotstock order, quantity does not match > 0 or == 0, ERR:121 - sodanca_purchase_plan line id: {0} - {1}\n".format(pp_lin_id,now)
+					log_entry(logfilename, log_str)
 				# print('DEBUG update 1', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
@@ -1394,7 +1449,15 @@ def create_hotstock_order(conn, companycode):
 				raise
 
 			try:
-				update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+				if pp_order_qty > 0:
+					update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
+				elif pp_order_qty == 0:
+					update_query = """DELETE FROM sodanca_purchase_plan WHERE id = {0}""".format(pp_lin_id)
+				else:
+					now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
+					log_str = "Updating hotstock order, quantity does not match > 0 or == 0, ERR:121 - sodanca_purchase_plan line id: {0} - {1}\n".format(pp_lin_id,now)
+					log_entry(logfilename, log_str)
+				# update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
 				# print('DEBUG update 1', update_query)
 				cur2 = conn.cursor()
 				cur2.execute(update_query)
@@ -1421,6 +1484,10 @@ def create_hotstock_order(conn, companycode):
 				log_str = "Error updating orders with hot stock quantities. ERR:107 {0}\n\n{1}".format(now, str(e))
 				log_entry(logfilename, log_str)
 				raise
+
+	now_finish = datetime.datetime.now()
+	run_time = now_finish-now_start
+	log_str="Ending run -- Hot Stock {0}\nRun time: {1}".format(now_finish.strftime('%H:%M:%S - %Y-%m-%d'), str(run_time))
 
 	cur.close()
 
