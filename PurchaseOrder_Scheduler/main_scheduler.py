@@ -1508,7 +1508,7 @@ def check_ship_date(conn, companycode):
 			cur.close()
 			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d
 			#check if shipdate is less than 7 weeks
-			lead_time_check = datetime.datetime.strptime(dtime_shipdate,'%Y-%m-%d')-datetime.datetime.now()
+			lead_time_check = dtime_shipdate-datetime.datetime.now()
 			print('DEBUG lead_time_check - ',lead_time_check)
 			return dtime_shipdate
 		else:
