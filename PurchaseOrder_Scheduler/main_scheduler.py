@@ -219,6 +219,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			end_prev_year = (start_date - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 
 			if order_type == 'R' and product_grade in ['C','D'] :
+				order_mod = 1
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			elif order_type == 'N' and product_grade == 'C':
 				qto_query = "SELECT COALESCE(sd_quantity_to_order({0},'{1}' ,'{2}'),0), COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
@@ -1118,7 +1119,7 @@ def create_functions(conn,companycode):
 		BEGIN
 			UPDATE sodanca_purchase_plan_date set status = 't' WHERE status ='c';
 			GET DIAGNOSTICS a_count = ROW_COUNT;
-			IF sdate == '1970-01-01' THEN
+			IF sdate = '1970-01-01' THEN
 				INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (((SELECT ship_date FROM sodanca_purchase_plan_date WHERE status = 't')::date+'1 week'::interval)::date , now(),'c');
 			ELSE
 				INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (sdate, now(),'c');
@@ -1132,13 +1133,10 @@ def create_functions(conn,companycode):
 		LANGUAGE 'plpgsql' VOLATILE;
 
 		ALTER FUNCTION public.sd_update_pplan_date(date)
-		    OWNER TO {login};
-		""".format(login = config[companycode]['login'])
+		    OWNER TO {login};""".format(login = config[companycode]['login'])
 
-			#config[companycode]['login']
-			#print('functions_query[6]',functions_query[6]) #DEBUG
-	logfilename = config[companycode]['logfilename']
 	try:
+		logfilename = config[companycode]['logfilename']
 		cur = conn.cursor()
 		for function_query in functions_query:
 			#print('--'*120)
@@ -1508,7 +1506,10 @@ def check_ship_date(conn, companycode):
 			log_entry(logfilename, log_str)
 		elif numdates == 1:
 			cur.close()
-			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d')
+			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d
+			#check if shipdate is less than 7 weeks
+			lead_time_check = datetime.datetime.strptime(dtime_shipdate,'%Y-%m-%d')-datetime.datetime.now()
+			print('DEBUG lead_time_check - ',lead_time_check)
 			return dtime_shipdate
 		else:
 			return 0
@@ -1568,15 +1569,15 @@ def run_all(conn , companycode):
 
 	try:
 		create_order(conn, 'N', 'A', plan_period_a, companycode)
-		create_order(conn, 'N', 'B', plan_period_b, companycode)
-		create_order(conn, 'N', 'C', plan_period_b, companycode)
-		create_order(conn, 'R', 'A', plan_period_a, companycode)
-		create_order(conn, 'R', 'B', plan_period_b, companycode)
-		create_order(conn, 'R', 'C', plan_period_c, companycode)
-		create_order(conn, 'R', 'D', plan_period_d, companycode)
-
-		create_hotstock_order(conn, companycode)
-		create_tights_order(conn,companycode)
+		# create_order(conn, 'N', 'B', plan_period_b, companycode)
+		# create_order(conn, 'N', 'C', plan_period_b, companycode)
+		# create_order(conn, 'R', 'A', plan_period_a, companycode)
+		# create_order(conn, 'R', 'B', plan_period_b, companycode)
+		# create_order(conn, 'R', 'C', plan_period_c, companycode)
+		# create_order(conn, 'R', 'D', plan_period_d, companycode)
+		#
+		# create_hotstock_order(conn, companycode)
+		# create_tights_order(conn,companycode)
 
 	except KeyboardInterrupt:
 		print("Interrupted by user")
