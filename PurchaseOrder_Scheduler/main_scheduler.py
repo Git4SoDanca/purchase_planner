@@ -1987,7 +1987,7 @@ def install_update():
 						cur.execute()
 						break
 					except Exception as e:
-						log_str = "Could not update ship date. Check format is 'YYYY-MM-DD'.\n 0{0}".format(str(e))
+						log_str = "ERR:115 Could not update ship date. Check format is 'YYYY-MM-DD'.\n{0}".format(str(e))
 						log_entry(logfilename,log_str)
 						print('Exiting program')
 						sys.exit(1)
