@@ -1110,7 +1110,7 @@ def create_functions(conn,companycode):
 		BEGIN
 			UPDATE sodanca_purchase_plan_date set status = 't' WHERE status ='c';
 			GET DIAGNOSTICS a_count = ROW_COUNT;
-			IF sdate == '1970-01-01' THEN
+			IF sdate = '1970-01-01' THEN
 				INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (((SELECT ship_date FROM sodanca_purchase_plan_date WHERE status = 't')::date+'1 week'::interval)::date , now(),'c');
 			ELSE
 				INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (sdate, now(),'c');
@@ -1983,7 +1983,7 @@ def install_update():
 						cur.execute()
 						break
 					except Exception as e:
-						log_str = "Could not update ship date. Check format is 'YYYY-MM-DD'.\n ERR:115{0}".format(str(e))
+						log_str = "Could not update ship date. Check format is 'YYYY-MM-DD'.\n 0{0}".format(str(e))
 						log_entry(logfilename,log_str)
 						print('Exiting program')
 						sys.exit(1)
