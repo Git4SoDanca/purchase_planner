@@ -280,16 +280,8 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
 					if product_grade == 'C':
 						if qto < min_qty_2_ord_c_grade and qcomm > 0:
-							prt_str = """DEBUG qcomm>qspy- Product name:{8}
-							qto:{0}
-							qoo:{1}
-							qoop:{2}
-							qcomm:{3}
-							sold_prev_year:{4}
-							qeoh:{5}
-							qoh:{6}
-							trend:{7}""".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
-							print(prt_str)
+							# prt_str = "DEBUG qcomm>qspy- Product name:{8}\nqto:{0}\nqoo:{1}\nqoop:{2}\nqcomm:{3}\nsold_prev_year:{4}\nqeoh:{5}\nqoh:{6}\ntrend:{7}".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
+							# print(prt_str)
 							qto = qcomm
 							qto_rounded = qcomm
 						elif qto >= min_qty_2_ord_c_grade:
@@ -399,7 +391,7 @@ def create_tights_order(conn, companycode):
 		raise Exception
 		pass
 
-	print('DEBUG - Working dates: {},{},{},{},{}'.format(now_date,start_date,end_date,start_prev_year,end_prev_year))
+	# print('DEBUG - Working dates: {},{},{},{},{}'.format(now_date,start_date,end_date,start_prev_year,end_prev_year))
 
 	product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
 	  product_product.id, sodanca_stock_control.grade,
@@ -1510,15 +1502,9 @@ def check_ship_date(conn, companycode):
 			cur.close()
 			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d
 			# check if shipdate is less than 7 weeks
-			now = datetime.datetime.now().date()
-			#now_date = datetime.datetime.strftime(now,'%Y-%m-%d') 
-			
-			lead_time_check = abs((dtime_shipdate-now).days)//7
-			#print('DEBUG lead_time_check - ',lead_time_check)
-			if lead_time_check < 7:
-				update_date_query = "select sd_update_pplan_date()"
-				cur.execute(update_date_query)
-				
+			now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
+			lead_time_check = abs((dtime_shipdate-now_date).weeks)
+		 	# print('DEBUG lead_time_check - ',lead_time_check)
 			return dtime_shipdate
 		else:
 			return 0
