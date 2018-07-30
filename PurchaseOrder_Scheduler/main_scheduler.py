@@ -1993,6 +1993,7 @@ def install_update():
 					print("Enter new ship date in format 'YYYY-MM-DD'")
 					sdate = input(" >> ")
 					sdate_query = "SELECT sd_update_pplan_date({0})".format(sdate)
+					print('DEBUG sdate_query',sdate_query)
 					try:
 						cur.execute()
 						break
