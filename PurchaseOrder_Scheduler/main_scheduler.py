@@ -1499,12 +1499,12 @@ def check_ship_date(conn, companycode):
 				log_str += sdate[0]
 			log_entry(logfilename, log_str)
 		elif numdates == 1:
-			cur.close()
 			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d
 			# check if shipdate is less than 7 weeks
 			now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
 			lead_time_check = abs((dtime_shipdate-now_date).weeks)
 		 	# print('DEBUG lead_time_check - ',lead_time_check)
+			cur.close()
 			return dtime_shipdate
 		else:
 			return 0
