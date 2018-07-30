@@ -1992,13 +1992,13 @@ def install_update():
 				if ch == 'y':
 					print("Enter new ship date in format 'YYYY-MM-DD'")
 					sdate = input(" >> ")
-					sdate_query = "SELECT sd_update_pplan_date({0})".format(sdate)
-					print('DEBUG sdate_query',sdate_query)
+					sdate_query = "SELECT sd_update_pplan_date('{0}')".format(sdate)
+					# print('DEBUG sdate_query',sdate_query)
 					try:
-						cur.execute()
+						cur.execute(sdate_query)
 						break
 					except Exception as e:
-						log_str = "ERR:115 Could not update ship date. Check format is 'YYYY-MM-DD'.\n{0}".format(str(e))
+						log_str = "ERR:115 Could not update ship date. Check format is YYYY-MM-DD.\n{0}".format(str(e))
 						log_entry(logfilename,log_str)
 						print('Exiting program')
 						sys.exit(1)
