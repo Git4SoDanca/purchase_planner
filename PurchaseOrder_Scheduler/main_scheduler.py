@@ -1501,8 +1501,18 @@ def check_ship_date(conn, companycode):
 		elif numdates == 1:
 			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d
 			# check if shipdate is less than 7 weeks
-			now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
-			lead_time_check = abs((dtime_shipdate-now_date).weeks)
+			now_date = datetime.datetime.now().date()
+			lead_time_check = abs((dtime_shipdate-now_date).days)//7
+			while lead_time_check < 7: #Walking dates until correct window is set TODO need to changin this into a recursive function, this is janky
+					sdate_query = "SELECT sd_update_pplan_date()"
+					cur.execute(sdate_query)
+					cur.execute(check_date_query)
+					ship_date = cur.fetchall()
+					dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d
+					# check if shipdate is less than 7 weeks
+					now_date = datetime.datetime.now().date()
+					lead_time_check = abs((dtime_shipdate-now_date).days)//7
+
 		 	# print('DEBUG lead_time_check - ',lead_time_check)
 			cur.close()
 			return dtime_shipdate
