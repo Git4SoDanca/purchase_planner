@@ -218,6 +218,9 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 			start_prev_year = (start_date - datetime.timedelta(weeks = 52)).strftime('%Y-%m-%d')
 			end_prev_year = (start_date - datetime.timedelta(weeks = 52) + datetime.timedelta(weeks = purchase_period)).strftime('%Y-%m-%d')
 
+			if order_type == 'R':
+				order_mod = 1 #Avoiding round up for rush orders
+
 			if order_type == 'R' and product_grade in ['C','D'] :
 				qto_query = "SELECT COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)".format(product_id,start_date, end_date)
 			elif order_type == 'N' and product_grade == 'C':
@@ -277,7 +280,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
 					if product_grade == 'C':
 						if qto < min_qty_2_ord_c_grade and qcomm > 0:
-							# prt_str = "DEBUG qcomm>qspy- Product name:{8} \n qto:{0} \n qoo:{1} \n qoop:{2} \n qcomm:{3} \n sold_prev_year:{4} \n qeoh:{5} \n qoh:{6} \n trend:{7}".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
+							# prt_str = "DEBUG qcomm>qspy- Product name:{8}\nqto:{0}\nqoo:{1}\nqoop:{2}\nqcomm:{3}\nsold_prev_year:{4}\nqeoh:{5}\nqoh:{6}\ntrend:{7}".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
 							# print(prt_str)
 							qto = qcomm
 							qto_rounded = qcomm
@@ -388,7 +391,7 @@ def create_tights_order(conn, companycode):
 		raise Exception
 		pass
 
-	print('DEBUG - Working dates: {},{},{},{},{}'.format(now_date,start_date,end_date,start_prev_year,end_prev_year))
+	# print('DEBUG - Working dates: {},{},{},{},{}'.format(now_date,start_date,end_date,start_prev_year,end_prev_year))
 
 	product_list_query = """SELECT product_supplierinfo.product_id, product_template.name, pricelist_partnerinfo.price AS vendor_cost, categ_id, product_product.name as product_name,
 	  product_product.id, sodanca_stock_control.grade,
@@ -1110,7 +1113,7 @@ def create_functions(conn,companycode):
 		BEGIN
 			UPDATE sodanca_purchase_plan_date set status = 't' WHERE status ='c';
 			GET DIAGNOSTICS a_count = ROW_COUNT;
-			IF sdate == '1970-01-01' THEN
+			IF sdate = '1970-01-01' THEN
 				INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (((SELECT ship_date FROM sodanca_purchase_plan_date WHERE status = 't')::date+'1 week'::interval)::date , now(),'c');
 			ELSE
 				INSERT INTO sodanca_purchase_plan_date (ship_date,gen_tstamp,status) VALUES (sdate, now(),'c');
@@ -1124,13 +1127,10 @@ def create_functions(conn,companycode):
 		LANGUAGE 'plpgsql' VOLATILE;
 
 		ALTER FUNCTION public.sd_update_pplan_date(date)
-		    OWNER TO {login};
-		""".format(login = config[companycode]['login'])
+		    OWNER TO {login};""".format(login = config[companycode]['login'])
 
-			#config[companycode]['login']
-			#print('functions_query[6]',functions_query[6]) #DEBUG
-	logfilename = config[companycode]['logfilename']
 	try:
+		logfilename = config[companycode]['logfilename']
 		cur = conn.cursor()
 		for function_query in functions_query:
 			#print('--'*120)
@@ -1500,7 +1500,11 @@ def check_ship_date(conn, companycode):
 			log_entry(logfilename, log_str)
 		elif numdates == 1:
 			cur.close()
-			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d')
+			dtime_shipdate = ship_date[0][0] #datetime.datetime.strptime(ship_date[0][0], '%Y-%m-%d
+			# check if shipdate is less than 7 weeks
+			now_date = (datetime.datetime.now()).strftime('%Y-%m-%d')
+			lead_time_check = abs((dtime_shipdate-now_date).weeks)
+		 	# print('DEBUG lead_time_check - ',lead_time_check)
 			return dtime_shipdate
 		else:
 			return 0
@@ -1983,7 +1987,7 @@ def install_update():
 						cur.execute()
 						break
 					except Exception as e:
-						log_str = "Could not update ship date. Check format is 'YYYY-MM-DD'.\n ERR:115{0}".format(str(e))
+						log_str = "ERR:115 Could not update ship date. Check format is 'YYYY-MM-DD'.\n{0}".format(str(e))
 						log_entry(logfilename,log_str)
 						print('Exiting program')
 						sys.exit(1)
