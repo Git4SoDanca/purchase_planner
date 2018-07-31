@@ -284,9 +284,13 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					if product_grade == 'C':
 						if qto < min_qty_2_ord_c_grade and qcomm > 0:
 							# prt_str = "DEBUG qcomm>qspy- Product name:{8}\nqto:{0}\nqoo:{1}\nqoop:{2}\nqcomm:{3}\nsold_prev_year:{4}\nqeoh:{5}\nqoh:{6}\ntrend:{7}".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
-							# print(prt_str)
-							qto = abs(qeoh)
-							qto_rounded = abs(qeoh)
+							# print(prt_str
+							if qeoh < 0:
+								qto = abs(qeoh)
+								qto_rounded = abs(qeoh)
+							else:
+								qto = 0
+								qto_rounded = 0
 						elif qto >= min_qty_2_ord_c_grade:
 							qto_rounded = qto
 						else:
