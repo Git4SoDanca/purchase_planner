@@ -249,10 +249,12 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 			qto_qval = product_qto[0][0]
 
+			min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
+
 			if product_grade == 'C' and order_type == 'N' :
-				if qto_qval >= 3:
+				if qto_qval >= min_qty_2_ord_c_grade:
 					qty_2_ord = qto_qval
-				elif qto_qval < 3 and product_qto[0][1] > 0:
+				elif qto_qval < min_qty_2_ord_c_grade and product_qto[0][1] > 0:
 					qty_2_ord = product_qto[0][1]
 				else:
 					qty_2_ord = 0
