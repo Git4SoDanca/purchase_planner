@@ -263,7 +263,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 			if qty_2_ord > 0: ### Production
 
-				prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{3}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
+				prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{3}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0),COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
 				#Still missing box_capacity which should come here maybe as a function or a query
 				# print(prod_details_query)
 				try:
@@ -278,14 +278,15 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					qeoh=prod_details[0][5]
 					qoh=prod_details[0][6]
 					qst=prod_details[0][7]
+					qtons=prod_details[0][8]
 
 					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
 					if product_grade == 'C':
 						if qto < min_qty_2_ord_c_grade and qcomm > 0:
 							# prt_str = "DEBUG qcomm>qspy- Product name:{8}\nqto:{0}\nqoo:{1}\nqoop:{2}\nqcomm:{3}\nsold_prev_year:{4}\nqeoh:{5}\nqoh:{6}\ntrend:{7}".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
 							# print(prt_str)
-							qto = qcomm
-							qto_rounded = qcomm
+							qto = qtons
+							qto_rounded = qtons
 						elif qto >= min_qty_2_ord_c_grade:
 							qto_rounded = qto
 						else:
