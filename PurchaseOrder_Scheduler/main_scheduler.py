@@ -763,7 +763,8 @@ def create_tables(conn, companycode):
 			WHEN inventory_grade.order_mod IS NOT NULL
 			THEN inventory_grade.order_mod
 			ELSE 1
-		END AS order_mod
+		END AS order_mod,
+		inventory_grade.rank_qty_sold
 		FROM product_product
 		LEFT JOIN inventory_grade ON inventory_grade.product_id = product_product.id
 		WHERE
@@ -1060,7 +1061,7 @@ def create_functions(conn,companycode):
 		-- Sales trend
 		CREATE OR REPLACE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
 		$$
-		SELECT round(sd_qs($1,(now()-'6 months'::interval)::date, now()::date)/sd_qs($1,(now()- '18 months'::interval)::date,(now()- '12 months'::interval)::date)*100,2) as growth;
+		SELECT round(sd_qs($1,(now()-'6 months'::interval)::date, now()::date)/sd_qs($1,(now()- '18 months'::interval)::date,(now()- '12 months'::interval)::date),2) as growth;
 		$$ LANGUAGE SQL;
 
 		ALTER FUNCTION public.sd_sales_trend(integer) OWNER TO {login};
