@@ -249,10 +249,12 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 			qto_qval = product_qto[0][0]
 
+			min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
+
 			if product_grade == 'C' and order_type == 'N' :
-				if qto_qval >= 3:
+				if qto_qval >= min_qty_2_ord_c_grade:
 					qty_2_ord = qto_qval
-				elif qto_qval < 3 and product_qto[0][1] > 0:
+				elif qto_qval < min_qty_2_ord_c_grade and product_qto[0][1] > 0:
 					qty_2_ord = product_qto[0][1]
 				else:
 					qty_2_ord = 0
@@ -261,7 +263,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 
 			if qty_2_ord > 0: ### Production
 
-				prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{3}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
+				prod_details_query = """SELECT COALESCE(sd_quantity_to_order({0},'{1}','{2}'),0), COALESCE(sd_qoo({0},'{3}','{1}'),0), COALESCE(sd_qoo({0},'{1}','{2}'),0), COALESCE(sd_qcomm({0},'{3}','{2}'),0), COALESCE(sd_qs_prev_yr({0},'{4}','{2}'),0), COALESCE(sd_expected_onhand({0},'{1}'),0), COALESCE(sd_qoh({0}),0), COALESCE(sd_sales_trend({0}),0),COALESCE(sd_quantity_to_order_no_hist({0},'{1}' ,'{2}'),0)""".format(product_id, start_date, end_date, now_minus_6mo, now_date)
 				#Still missing box_capacity which should come here maybe as a function or a query
 				# print(prod_details_query)
 				try:
@@ -276,14 +278,19 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
 					qeoh=prod_details[0][5]
 					qoh=prod_details[0][6]
 					qst=prod_details[0][7]
+					qtons=prod_details[0][8]
 
 					min_qty_2_ord_c_grade = int(config[companycode]['c_min'])
 					if product_grade == 'C':
 						if qto < min_qty_2_ord_c_grade and qcomm > 0:
 							# prt_str = "DEBUG qcomm>qspy- Product name:{8}\nqto:{0}\nqoo:{1}\nqoop:{2}\nqcomm:{3}\nsold_prev_year:{4}\nqeoh:{5}\nqoh:{6}\ntrend:{7}".format(qto,qoo,qoop,qcomm,qspy,qeoh, qoh,qst, product_name)
-							# print(prt_str)
-							qto = qcomm
-							qto_rounded = qcomm
+							# print(prt_str
+							if qeoh < 0:
+								qto = abs(qeoh)
+								qto_rounded = abs(qeoh)
+							else:
+								qto = 0
+								qto_rounded = 0
 						elif qto >= min_qty_2_ord_c_grade:
 							qto_rounded = qto
 						else:
@@ -756,7 +763,8 @@ def create_tables(conn, companycode):
 			WHEN inventory_grade.order_mod IS NOT NULL
 			THEN inventory_grade.order_mod
 			ELSE 1
-		END AS order_mod
+		END AS order_mod,
+		inventory_grade.rank_qty_sold
 		FROM product_product
 		LEFT JOIN inventory_grade ON inventory_grade.product_id = product_product.id
 		WHERE
@@ -1053,7 +1061,7 @@ def create_functions(conn,companycode):
 		-- Sales trend
 		CREATE OR REPLACE FUNCTION sd_sales_trend(pid int) RETURNS decimal AS
 		$$
-		SELECT round(sd_qs($1,(now()-'6 months'::interval)::date, now()::date)/sd_qs($1,(now()- '18 months'::interval)::date,(now()- '12 months'::interval)::date)*100,2) as growth;
+		SELECT round(sd_qs($1,(now()-'6 months'::interval)::date, now()::date)/sd_qs($1,(now()- '18 months'::interval)::date,(now()- '12 months'::interval)::date),2) as growth;
 		$$ LANGUAGE SQL;
 
 		ALTER FUNCTION public.sd_sales_trend(integer) OWNER TO {login};
