@@ -764,7 +764,8 @@ def create_tables(conn, companycode):
 			THEN inventory_grade.order_mod
 			ELSE 1
 		END AS order_mod,
-		inventory_grade.rank_qty_sold
+		inventory_grade.rank_qty_sold,
+		inventory_grade.rank_gr_profit
 		FROM product_product
 		LEFT JOIN inventory_grade ON inventory_grade.product_id = product_product.id
 		WHERE
