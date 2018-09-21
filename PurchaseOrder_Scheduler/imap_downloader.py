@@ -47,9 +47,9 @@ for emailid in items:
     # print('DEBUG mail_from',mail_from)
     # print(" DEBUG ["+str(mail["From"])+"] :\n" + str(mail["Subject"]))#'\n\n'+str(mail))
 
-    print('DEBUG mail["Date"]', mail['Date'])
+    # print('DEBUG mail["Date"]', mail['Date'])
     email_date =  email.utils.parsedate_to_datetime(mail['Date'])
-    print('DEBUG email_date',email_date)
+    # print('DEBUG email_date',email_date)
     extr_domain = mail_from = (re.search('<.*@(.*)>',str(mail["From"]))).group(1)
     # print('DEBUG extr_domain',extr_domain)
     if extr_domain == config['DEFAULT']['source_email_domain'] and prev_date <= email_date:
@@ -72,7 +72,7 @@ for emailid in items:
             # filename = mail["From"] + "_hw1answer"
 
             att_path = os.path.join(detach_dir, filename)
-            print('DEBUG check file in list "{0}" "{1}"'.format(filename, filename in file_list))
+            # print('DEBUG check file in list "{0}" "{1}"'.format(filename, filename in file_list))
             if filename in file_list:
                 # finally write the stuff
                 fp = open(att_path, 'wb')
