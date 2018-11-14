@@ -54,13 +54,14 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 		sub_cur.execute(schedule_query)
 
 	except Exception as e:
-		log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+	 	log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 
-		log_entry(logfilename, log_str+'\n'+str(e))
-		raise
+	 	log_entry(logfilename, log_str+'\n'+str(e))
+	 	raise
+	# except # TODO: Write Exception for vendor not found without stopping script
 
 	first_date = sub_cur.fetchone()
-	# print('DEBUG first_date: {}'.format(first_date))
+	print('DEBUG first_date: {}'.format(first_date))
 	cut_off_date = first_date[3]
 	ship_date = first_date[4]
 
