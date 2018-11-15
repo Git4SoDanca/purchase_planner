@@ -46,21 +46,26 @@ def log_entry(logfile, entry_text):
 
 def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 	sub_cur = conn.cursor()
+	now = datetime.datetime.now()
 	schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
 	# print('DEBUG schedule_query: {0}'.format(schedule_query))
 	logfilename = config[companycode]['logfilename']
 	try:
 		# print(schedule_query)
 		sub_cur.execute(schedule_query)
+		first_date = sub_cur.fetchone()
 
 	except Exception as e:
 	 	log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
-
 	 	log_entry(logfilename, log_str+'\n'+str(e))
-	 	raise
+
+		assumed_date = now + datetime.timedelta(weeks = 1)
+		log_str = 'Date not found, assuming ship date_expected {0}'.format(assumed_date.strftime('%Y-%m-%d'))
+		first_date = assumed_date
+
+	 	# raise
 	# except # TODO: Write Exception for vendor not found without stopping script
 
-	first_date = sub_cur.fetchone()
 	print('DEBUG first_date: {}'.format(first_date))
 	cut_off_date = first_date[3]
 	ship_date = first_date[4]
