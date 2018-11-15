@@ -58,8 +58,7 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
 	except Exception as e:
 	 	log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 	 	log_entry(logfilename, log_str+'\n'+str(e))
-
-		assumed_date = now + datetime.timedelta(weeks = 1)
+		assumed_date = now + datetime.timedelta(days = 7)
 		log_str = 'Date not found, assuming ship date_expected {0}'.format(assumed_date.strftime('%Y-%m-%d'))
 		first_date = assumed_date
 
