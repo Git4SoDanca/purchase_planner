@@ -53,14 +53,18 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
     try:
         # print(schedule_query)
         sub_cur.execute(schedule_query)
-        first_date = sub_cur.fetchone()
+        if sub_cur.rowcount() > 0 :
+          first_date = sub_cur.fetchone()
+        else:
+          assumed_date = now + datetime.timedelta(days = 7)
+          log_str = 'Date not found, assuming ship date_expected {0}\n'.format(assumed_date.strftime('%Y-%m-%d'))
+          log_entry(logfilename, log_str)
+          first_date = assumed_date
 
     except Exception as e:
         log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
         log_entry(logfilename, log_str+'\n'+str(e))
-        assumed_date = now + datetime.timedelta(days = 7)
-        log_str = 'Date not found, assuming ship date_expected {0}'.format(assumed_date.strftime('%Y-%m-%d'))
-        first_date = assumed_date
+        raise
 
          # raise
     # except # TODO: Write Exception for vendor not found without stopping script
@@ -76,7 +80,7 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
         sub_cur.execute(schedule_query)
 
     except Exception as e:
-        log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
+        log_str = 'Cannot query schedule dates. ERR:123 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
 
         log_entry(logfilename, log_str+'\n'+str(e))
         raise
@@ -1247,7 +1251,7 @@ def parse_attachments(conn, companycode):
             conn.commit()
         except Exception as e:
             now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
-            log_str = "Cannot create table sodanca_estoque_pulmao. ERR:012 {1} \n {0}".format(str(e), now)
+            log_str = "Cannot create table sodanca_estoque_pulmao. ERR:124 {1} \n {0}".format(str(e), now)
 
             log_entry(logfilename,log_str)
 
@@ -1461,7 +1465,7 @@ def create_hotstock_order(conn, companycode):
                     update_query = """DELETE FROM sodanca_purchase_plan WHERE id = {0}""".format(pp_lin_id)
                 else:
                     now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
-                    log_str = "Updating hotstock order, quantity does not match > 0 or == 0, ERR:121 - sodanca_purchase_plan line id: {0} - {1}\n".format(pp_lin_id,now)
+                    log_str = "Updating hotstock order, quantity does not match > 0 or == 0, ERR:122 - sodanca_purchase_plan line id: {0} - {1}\n".format(pp_lin_id,now)
                     log_entry(logfilename, log_str)
                 # update_query = """UPDATE sodanca_purchase_plan SET qty_2_ord = {0}, qty_2_ord_adj = {1} WHERE id = {2}""".format(pp_order_qty, pp_order_qty_adj, pp_lin_id)
                 # print('DEBUG update 1', update_query)
