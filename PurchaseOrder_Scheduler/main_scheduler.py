@@ -76,7 +76,7 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
     schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND expected_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, ship_date)
     logfilename = config[companycode]['logfilename']
     try:
-        # print(schedule_query)
+        print('DEBUG: schedule_query - ',schedule_query)
         sub_cur.execute(schedule_query)
 
     except Exception as e:
