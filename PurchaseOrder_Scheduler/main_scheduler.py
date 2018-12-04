@@ -146,7 +146,7 @@ def create_order(conn, order_type, product_grade, period_length, companycode):
             # forecast_window_limit = int(config[companycode]['forecast_window_limit_rush']) #weeks DELETE IF THIS DECLARATION IS NOT NEEDED
             # print('DEBUG ORDER "R":',vendor, order_type)
             try:
-                # print('DEBUG:',vendor, order_type)
+                print('DEBUG:',vendor, order_type)
                 cut_off_date, initial_regular_ship_date, forecast_window_limit_date = get_rush_expected_date(conn, vendor[0], now.strftime('%Y-%m-%d'), companycode)
                 # print('DEBUG expected_date return:',cut_off_date, initial_regular_ship_date, forecast_window_limit_date)
 
