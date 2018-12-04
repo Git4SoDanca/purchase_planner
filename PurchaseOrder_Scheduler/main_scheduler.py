@@ -53,13 +53,13 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
     try:
         # print(schedule_query)
         sub_cur.execute(schedule_query)
-        if sub_cur.rowcount() > 0 :
-          first_date = sub_cur.fetchone()
-        else:
-          assumed_date = now + datetime.timedelta(days = 7)
-          log_str = 'Date not found, assuming ship date_expected {0}\n'.format(assumed_date.strftime('%Y-%m-%d'))
-          log_entry(logfilename, log_str)
-          first_date = assumed_date
+        # if sub_cur.rowcount() > 0 :
+        first_date = sub_cur.fetchone()
+        # else:
+        #   assumed_date = now + datetime.timedelta(days = 7)
+        #   log_str = 'Date not found, assuming ship date_expected {0}\n'.format(assumed_date.strftime('%Y-%m-%d'))
+        #   log_entry(logfilename, log_str)
+        #   first_date = assumed_date
 
     except Exception as e:
         log_str = 'Cannot query schedule dates. ERR:012 {}'.format(datetime.datetime.now().strftime('%H:%M:%S - %Y-%m-%d'))
