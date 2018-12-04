@@ -48,7 +48,7 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
     sub_cur = conn.cursor()
     now = datetime.datetime.now()
     schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
-    # print('DEBUG schedule_query: {0}'.format(schedule_query))
+    print('DEBUG schedule_query: {0}'.format(schedule_query))
     logfilename = config[companycode]['logfilename']
     try:
         # print(schedule_query)
