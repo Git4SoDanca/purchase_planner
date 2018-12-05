@@ -48,7 +48,7 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
     sub_cur = conn.cursor()
     now = datetime.datetime.now()
     schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND cut_off_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, now_date)
-    print('DEBUG schedule_query: {0}'.format(schedule_query))
+    # print('DEBUG schedule_query: {0}'.format(schedule_query))
     logfilename = config[companycode]['logfilename']
     try:
         # print(schedule_query)
@@ -69,14 +69,14 @@ def get_rush_expected_date(conn, vendor_id, now_date, companycode):
          # raise
     # except # TODO: Write Exception for vendor not found without stopping script
 
-    print('DEBUG first_date: {}'.format(first_date))
+    # print('DEBUG first_date: {}'.format(first_date))
     cut_off_date = first_date[3]
     ship_date = first_date[4]
 
     schedule_query = "SELECT * FROM sodanca_shipment_schedule WHERE supplier_id = {0} AND expected_date > '{1}'::date ORDER BY cut_off_date LIMIT 1".format(vendor_id, ship_date)
     logfilename = config[companycode]['logfilename']
     try:
-        print('DEBUG: schedule_query - ',schedule_query)
+        # print('DEBUG: schedule_query - ',schedule_query)
         sub_cur.execute(schedule_query)
 
     except Exception as e:
