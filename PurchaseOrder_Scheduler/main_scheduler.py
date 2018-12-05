@@ -1295,7 +1295,9 @@ def parse_attachments(conn, companycode):
 
             except Exception as e:
                 now = (datetime.datetime.now()).strftime('%H:%M:%s %Y-%m-%d')
-                log_str = "Error inserting in sodanca_estoque_pulmao. ERR:103 {0}\n\n{1}".format(now, str(e))
+                log_str = "Error inserting in sodanca_estoque_pulmao. ERR:103 {0}\n\n{1}\n".format(now, str(e))
+                log_str = ('estoque_pulmao insert: \n product_query : {0} \n insert_query : {1} \n').format(product_query,insert_query)
+
 
                 log_entry(logfilename, log_str)
                 pass
